@@ -4,14 +4,16 @@ import {noise} from "@chainsafe/libp2p-noise";
 import {mplex} from "@libp2p/mplex";
 import {bootstrap} from "@libp2p/bootstrap";
 
-// TODO: Configure this properly, this is a random address I got in a run
 const bootstrapAddresses = [
-    "/ip4/127.0.0.1/tcp/8000/p2p/12D3KooWCRCA3QNLFSWKfshATM1GvrmEvfUtGGX97A6pK58Wm7qV"
+    // TODO: Configure this properly, this is a random address I got in a run
+    "/ip4/127.0.0.1/tcp/8000/p2p/12D3KooWCRCA3QNLFSWKfshATM1GvrmEvfUtGGX97A6pK58Wm7qV",
+    "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+    "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
 ];
 
 const nodeOptions = {
     addresses: {
-        listen: ["/ip4/127.0.0.1/tcp/8000"] // TODO: Check this and consider changing
+        listen: ["/ip4/0.0.0.0/tcp/0"] // TODO: Check this and consider changing
     },
     transports: [tcp()],
     connectionEncryption: [noise()],
@@ -19,6 +21,7 @@ const nodeOptions = {
     peerDiscovery: [
         bootstrap({
             list: bootstrapAddresses,
+            timeout: 2000
         })
     ],
     connectionManager: {
