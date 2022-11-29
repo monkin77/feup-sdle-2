@@ -3,6 +3,7 @@ import {tcp} from "@libp2p/tcp";
 import {noise} from "@chainsafe/libp2p-noise";
 import {mplex} from "@libp2p/mplex";
 import {bootstrap} from "@libp2p/bootstrap";
+import {mdns} from "@libp2p/mdns";
 
 const bootstrapAddresses = [
     // TODO: Configure this properly, this is a random address I got in a run
@@ -18,10 +19,14 @@ const nodeOptions = {
     transports: [tcp()],
     connectionEncryption: [noise()],
     streamMuxers: [mplex()],
+    // TODO: Experiment with relay, https://github.com/libp2p/js-libp2p/tree/bae32bafce75a3801a7a96f77a9ccf43b3208f9c/examples/discovery-mechanisms
     peerDiscovery: [
         bootstrap({
             list: bootstrapAddresses,
-            timeout: 2000
+            timeout: 20e3
+        }),
+        mdns({
+            interval: 20e3
         })
     ],
     connectionManager: {
