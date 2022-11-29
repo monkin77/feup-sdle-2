@@ -17,6 +17,7 @@
   "license": "ISC",
   "dependencies": {
     "@chainsafe/libp2p-noise": "^10.2.0",
+    "@libp2p/bootstrap": "^5.0.0",
     "@libp2p/mplex": "^7.1.0",
     "@libp2p/tcp": "^6.0.4",
     "dotenv": "^16.0.3",
