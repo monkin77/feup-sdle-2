@@ -4,7 +4,8 @@ import {noise} from "@chainsafe/libp2p-noise";
 import {mplex} from "@libp2p/mplex";
 import {bootstrap} from "@libp2p/bootstrap";
 
-const bootstrapMultiaddrs = [
+// TODO: Configure this properly, this is a random address I got in a run
+const bootstrapAddresses = [
     "/ip4/127.0.0.1/tcp/8000/p2p/12D3KooWCRCA3QNLFSWKfshATM1GvrmEvfUtGGX97A6pK58Wm7qV"
 ];
 
@@ -17,7 +18,7 @@ const nodeOptions = {
     streamMuxers: [mplex()],
     peerDiscovery: [
         bootstrap({
-            list: bootstrapMultiaddrs,
+            list: bootstrapAddresses,
         })
     ],
     connectionManager: {
@@ -36,7 +37,7 @@ class Node {
             console.log("Discovered ", e.detail.id.toString());
         });
 
-        this.node.addEventListener("peer:connect", (e) => {
+        this.node.connectionManager.addEventListener("peer:connect", (e) => {
             console.log("Connected to ", e.detail.remotePeer.toString());
         });
 
