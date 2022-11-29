@@ -13,7 +13,7 @@ export default () => {
     app.post("/stop", async (req, res) => {
         await Node.stop();
         res.json({});
-    })
+    });
 
     return app;
-}
+};

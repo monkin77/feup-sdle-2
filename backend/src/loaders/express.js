@@ -1,5 +1,5 @@
 import express from "express";
-import apiRoutes from "../api/index.js"
+import apiRoutes from "../api/index.js";
 
 export default (app) => {
     app.use(express.json());
@@ -19,5 +19,5 @@ export default (app) => {
         return next();
     });
 
-    app.use(apiRoutes())
-}
+    app.use(apiRoutes());
+};

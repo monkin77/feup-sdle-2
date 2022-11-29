@@ -32,11 +32,11 @@ class Node {
         await this.node.start();
         console.log("Node has started");
 
-        this.node.addEventListener('peer:discovery', (e) => {
+        this.node.addEventListener("peer:discovery", (e) => {
             console.log("Discovered ", e.detail.id.toString());
         });
 
-        this.node.addEventListener('peer:connect', (e) => {
+        this.node.addEventListener("peer:connect", (e) => {
             console.log("Connected to ", e.detail.remotePeer.toString());
         });
 
