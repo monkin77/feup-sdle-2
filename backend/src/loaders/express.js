@@ -1,4 +1,5 @@
 import express from "express";
+import apiRoutes from "../api/index.js"
 
 export default (app) => {
     app.use(express.json());
@@ -18,8 +19,5 @@ export default (app) => {
         return next();
     });
 
-    // Index endpoint
-    app.get("/", (req, res) => {
-        res.json({ message: "Hello World!" });
-    });
+    app.use(apiRoutes())
 }
