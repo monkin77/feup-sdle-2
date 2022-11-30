@@ -1,18 +1,13 @@
-import {createLibp2p} from "libp2p";
-import {tcp} from "@libp2p/tcp";
-import {noise} from "@chainsafe/libp2p-noise";
-import {mplex} from "@libp2p/mplex";
-import {bootstrap} from "@libp2p/bootstrap";
-import {mdns} from "@libp2p/mdns";
+import { createLibp2p } from "libp2p";
+import { tcp } from "@libp2p/tcp";
+import { noise } from "@chainsafe/libp2p-noise";
+import { mplex } from "@libp2p/mplex";
+import { bootstrap } from "@libp2p/bootstrap";
+import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
+import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 
-const bootstrapAddresses = [
-    // TODO: Configure this properly, this is a random address I got in a run
-    "/ip4/127.0.0.1/tcp/8000/p2p/12D3KooWCRCA3QNLFSWKfshATM1GvrmEvfUtGGX97A6pK58Wm7qV",
-    "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-    "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-];
 
-const nodeOptions = {
+const getNodeOptions = (relayAddresses) => ({
     addresses: {
         listen: ["/ip4/0.0.0.0/tcp/0"] // TODO: Check this and consider changing
     },
@@ -20,23 +15,27 @@ const nodeOptions = {
     connectionEncryption: [noise()],
     streamMuxers: [mplex()],
     // TODO: Experiment with relay, https://github.com/libp2p/js-libp2p/tree/bae32bafce75a3801a7a96f77a9ccf43b3208f9c/examples/discovery-mechanisms
+    pubsub: gossipsub({ allowPublishToZeroPeers: true }),
     peerDiscovery: [
         bootstrap({
-            list: bootstrapAddresses,
-            timeout: 20e3
+            list: relayAddresses
         }),
-        mdns({
-            interval: 20e3
+        pubsubPeerDiscovery({
+            interval: 1000
         })
     ],
     connectionManager: {
         autoDial: true, // auto connect to discovered peers
     }
-};
+});
 
-class Node {
+export default class Node {
+    constructor(relayAddresses) {
+        this.relayAddresses = relayAddresses;
+    }
+
     async start() {
-        this.node = await createLibp2p(nodeOptions);
+        this.node = await createLibp2p(getNodeOptions(this.relayAddresses));
 
         await this.node.start();
         console.log("Node has started");
@@ -58,6 +57,3 @@ class Node {
         console.log("Node has stopped");
     }
 }
-
-const nodeSingleton = new Node();
-export default nodeSingleton;
