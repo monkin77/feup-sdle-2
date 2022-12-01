@@ -15,6 +15,7 @@ const getNodeOptions = () => {
     const bootstrapAddresses = [bootstrap1, bootstrap2, bootstrap3];
     //console.log(bootstrapAddresses);
     return ({
+        // Libp2p Modules Documentation: https://github.com/libp2p/js-libp2p/blob/master/doc/CONFIGURATION.md#modules
         addresses: {
             listen: ["/ip4/0.0.0.0/tcp/0"] // TODO: Check this and consider changing
         },
