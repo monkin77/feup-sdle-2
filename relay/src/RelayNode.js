@@ -24,6 +24,7 @@ class RelayNode {
 
         const relayMultiaddrs = this.node.getMultiaddrs();
         console.log("Relay listening on addresses: ", relayMultiaddrs);
+
     }
 
     async stop() {

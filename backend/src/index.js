@@ -15,3 +15,13 @@ const port = process.env.PORT || 8080;
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
+
+async function registerHandler(req, res) {
+    const username = req.body.username;
+    const password = req.body.password;
+    const result = await Node.register(username, password);
+    res.send(result);
+}
+
+// Routes
+app.post("/register", registerHandler);
