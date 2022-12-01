@@ -7,7 +7,9 @@
   "scripts": {
     "start": "nodemon src/index.js",
     "prod": "NODE_ENV=production node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src --max-warnings 0",
+    "lint-fix": "npm run lint -- --fix"
   },
   "repository": {
     "type": "git",
@@ -16,10 +18,23 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@chainsafe/libp2p-gossipsub": "^5.2.1",
+    "@chainsafe/libp2p-noise": "^10.2.0",
+    "@libp2p/bootstrap": "^5.0.0",
+    "@libp2p/kad-dht": "^6.0.1",
+    "@libp2p/mdns": "^5.1.0",
+    "@libp2p/mplex": "^7.1.0",
+    "@libp2p/pubsub-peer-discovery": "^7.0.0",
+    "@libp2p/tcp": "^6.0.4",
+    "bcryptjs": "^2.4.3",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "express-validator": "^6.14.2",
     "http-status-codes": "^2.2.0",
+    "libp2p": "^0.40.0",
     "nodemon": "^2.0.20"
+  },
+  "devDependencies": {
+    "eslint": "^8.28.0"
   }
 }
