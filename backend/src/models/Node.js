@@ -5,14 +5,15 @@ import { mplex } from "@libp2p/mplex";
 import { bootstrap } from "@libp2p/bootstrap";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
-
+import { kadDHT } from "@libp2p/kad-dht";
+import { hashPassword } from "../utils.js";
 
 const getNodeOptions = () => {
     const relay1 = `/ip4/${process.env.RELAY_1_IP}/tcp/${process.env.RELAY_1_PORT}/p2p/${process.env.RELAY_1_ID}`;
-    const relay2 = `/ip4/${process.env.RELAY_2_IP}/tcp/${process.env.RELAY_2_PORT}`;
-    const relay3 = `/ip4/${process.env.RELAY_3_IP}/tcp/${process.env.RELAY_3_PORT}`;
+    const relay2 = `/ip4/${process.env.RELAY_2_IP}/tcp/${process.env.RELAY_2_PORT}/p2p/${process.env.RELAY_2_ID}`;
+    const relay3 = `/ip4/${process.env.RELAY_3_IP}/tcp/${process.env.RELAY_3_PORT}/p2p/${process.env.RELAY_3_ID}`;
     const relayAddresses = [relay1, relay2, relay3];
-    console.log(relayAddresses);
+    //console.log(relayAddresses);
     return ({
         addresses: {
             listen: ["/ip4/0.0.0.0/tcp/0"] // TODO: Check this and consider changing
@@ -23,16 +24,19 @@ const getNodeOptions = () => {
         pubsub: gossipsub({ allowPublishToZeroPeers: true }),
         peerDiscovery: [
             bootstrap({
+                interval: 60e3,
                 list: relayAddresses,
             }),
             pubsubPeerDiscovery({
                 interval: 1000
             })
         ],
+        dht: kadDHT(),
         connectionManager: {
             autoDial: true, // auto connect to discovered peers
         }
-})};
+    });
+};
 
 class Node {
     async start() {
@@ -52,6 +56,35 @@ class Node {
 
         const listenAddresses = this.node.getMultiaddrs();
         console.log("Listening on addresses: ", listenAddresses);
+    }
+
+    /**
+     * Function to register an account.
+     * To do so, it checks if the account already exists on content routing, and if not, it creates it.
+     * @param {*} username 
+     * @param {*} password 
+     * @returns true if the account was registered successfully, false otherwise.
+     */
+    async register(username, password) {
+        //const cid = CID.parse(username, "base64");
+
+        try {
+            // get the username content routing of node
+            await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
+            return { success: false, message: "Username already exists" };
+        } catch (err) {
+            console.log("err: ", err);
+            // TO DO: Check if the error is the one we want (no key found)
+
+            // username does not exist so we can register it
+
+            // encrypt password using bcrypt
+            const hashPass = await hashPassword(password);
+
+            await this.node.contentRouting.put(new TextEncoder().encode("/" + username), new TextEncoder().encode(hashPass));
+
+            return { success: true, message: "Registration successful" };
+        }
     }
 
     async stop() {
