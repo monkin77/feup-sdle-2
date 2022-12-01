@@ -25,3 +25,8 @@ async function registerHandler(req, res) {
 
 // Routes
 app.post("/register", registerHandler);
+
+/*
+TODO: Figure out how data is stored persistently
+TODO: Confirm if we really need relay nodes opposed to just using bootstrap nodes
+*/

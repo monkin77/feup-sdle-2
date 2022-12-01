@@ -5,8 +5,8 @@ import { mplex } from "@libp2p/mplex";
 import { bootstrap } from "@libp2p/bootstrap";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
-import bcrypt from "bcryptjs";
 import { kadDHT } from "@libp2p/kad-dht";
+import { hashPassword } from "../utils.js";
 
 const getNodeOptions = () => {
     const relay1 = `/ip4/${process.env.RELAY_1_IP}/tcp/${process.env.RELAY_1_PORT}/p2p/${process.env.RELAY_1_ID}`;
@@ -35,7 +35,8 @@ const getNodeOptions = () => {
         connectionManager: {
             autoDial: true, // auto connect to discovered peers
         }
-})};
+    });
+};
 
 class Node {
     async start() {
@@ -69,17 +70,18 @@ class Node {
 
         try {
             // get the username content routing of node
-            await this.node.contentRouting.get(new TextEncoder().encode('/' + username));
+            await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
             return { success: false, message: "Username already exists" };
         } catch (err) {
+            console.log("err: ", err);
             // TO DO: Check if the error is the one we want (no key found)
 
             // username does not exist so we can register it
 
             // encrypt password using bcrypt
-            const hashPass = await bcrypt.hash(password, 10);
+            const hashPass = await hashPassword(password);
 
-            await this.node.contentRouting.put(new TextEncoder().encode('/' + username), new TextEncoder().encode(hashPass));
+            await this.node.contentRouting.put(new TextEncoder().encode("/" + username), new TextEncoder().encode(hashPass));
 
             return { success: true, message: "Registration successful" };
         }
