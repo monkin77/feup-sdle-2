@@ -9,21 +9,21 @@ import { createFromJSON } from "@libp2p/peer-id-factory";
 import fs from "fs";
 
 export const createPeerId = async() => {
-    // We needed to use the 'peer-id' lib to export the relay's ids since the new lib had issues exporting to json
+    // We needed to use the 'peer-id' lib to export the bootstrap's ids since the new lib had issues exporting to json
     const peer = await peerIdLib.create({ keyType: "Ed25519", bits: 1024 });
     console.log(peer.toJSON());
 };
 
-class RelayNode {
+class BootstrapNode {
     async start() {
-        const nodeOptions = await this.buildOptions(process.env.RELAY_IP, process.env.RELAY_PORT, process.env.ID_FILENAME);
+        const nodeOptions = await this.buildOptions(process.env.BOOTSTRAP_IP, process.env.BOOTSTRAP_PORT, process.env.ID_FILENAME);
         this.node = await createLibp2p(nodeOptions);
 
         await this.node.start();
-        console.log("Relay has started");
+        console.log("Bootstrap has started");
 
-        const relayMultiaddrs = this.node.getMultiaddrs();
-        console.log("Relay listening on addresses: ", relayMultiaddrs);
+        const bootstrapMultiaddrs = this.node.getMultiaddrs();
+        console.log("Bootstrap listening on addresses: ", bootstrapMultiaddrs);
 
     }
 
@@ -36,7 +36,7 @@ class RelayNode {
         const address = `/ip4/${ip}/tcp/${port}`;
         console.log(address);
 
-        // Read the relay peer id from the stored file to keep it consistent across restarts
+        // Read the bootstrap peer id from the stored file to keep it consistent across restarts
         const idData = JSON.parse(fs.readFileSync(`./ids/${peerFile}`));
         const peerId = await createFromJSON(idData);
 
@@ -54,12 +54,12 @@ class RelayNode {
                     interval: 1000
                 })
             ],
-            relay: {
-                enabled: true, // Allows you to dial and accept relayed connections. Does not make you a relay.
-                hop: {
-                    enabled: true // Allows you to be a relay for other peers
-                }
-            },
+            /*  relay: {
+                 enabled: true, // Allows you to dial and accept relayed connections. Does not make you a bootstrap.
+                 hop: {
+                     enabled: true // Allows you to be a bootstrap for other peers
+                 }
+             }, */
         };
 
         return nodeOptions;
@@ -70,5 +70,5 @@ class RelayNode {
     }
 }
 
-const nodeSingleton = new RelayNode();
+const nodeSingleton = new BootstrapNode();
 export default nodeSingleton;

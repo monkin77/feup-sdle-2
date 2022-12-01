@@ -9,11 +9,11 @@ import { kadDHT } from "@libp2p/kad-dht";
 import { hashPassword } from "../utils.js";
 
 const getNodeOptions = () => {
-    const relay1 = `/ip4/${process.env.RELAY_1_IP}/tcp/${process.env.RELAY_1_PORT}/p2p/${process.env.RELAY_1_ID}`;
-    const relay2 = `/ip4/${process.env.RELAY_2_IP}/tcp/${process.env.RELAY_2_PORT}/p2p/${process.env.RELAY_2_ID}`;
-    const relay3 = `/ip4/${process.env.RELAY_3_IP}/tcp/${process.env.RELAY_3_PORT}/p2p/${process.env.RELAY_3_ID}`;
-    const relayAddresses = [relay1, relay2, relay3];
-    //console.log(relayAddresses);
+    const bootstrap1 = `/ip4/${process.env.BOOTSTRAP_1_IP}/tcp/${process.env.BOOTSTRAP_1_PORT}/p2p/${process.env.BOOTSTRAP_1_ID}`;
+    const bootstrap2 = `/ip4/${process.env.BOOTSTRAP_2_IP}/tcp/${process.env.BOOTSTRAP_2_PORT}/p2p/${process.env.BOOTSTRAP_2_ID}`;
+    const bootstrap3 = `/ip4/${process.env.BOOTSTRAP_3_IP}/tcp/${process.env.BOOTSTRAP_3_PORT}/p2p/${process.env.BOOTSTRAP_3_ID}`;
+    const bootstrapAddresses = [bootstrap1, bootstrap2, bootstrap3];
+    //console.log(bootstrapAddresses);
     return ({
         addresses: {
             listen: ["/ip4/0.0.0.0/tcp/0"] // TODO: Check this and consider changing
@@ -25,7 +25,7 @@ const getNodeOptions = () => {
         peerDiscovery: [
             bootstrap({
                 interval: 60e3,
-                list: relayAddresses,
+                list: bootstrapAddresses,
             }),
             pubsubPeerDiscovery({
                 interval: 1000
