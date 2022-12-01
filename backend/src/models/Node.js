@@ -5,8 +5,8 @@ import { mplex } from "@libp2p/mplex";
 import { bootstrap } from "@libp2p/bootstrap";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
-import { CID } from "multiformats/cid";
 import bcrypt from "bcryptjs";
+import { kadDHT } from "@libp2p/kad-dht";
 
 const getNodeOptions = () => {
     const relay1 = `/ip4/${process.env.RELAY_1_IP}/tcp/${process.env.RELAY_1_PORT}/p2p/${process.env.RELAY_1_ID}`;
@@ -31,6 +31,7 @@ const getNodeOptions = () => {
                 interval: 1000
             })
         ],
+        dht: kadDHT(),
         connectionManager: {
             autoDial: true, // auto connect to discovered peers
         }
@@ -56,22 +57,30 @@ class Node {
         console.log("Listening on addresses: ", listenAddresses);
     }
 
-
+    /**
+     * Function to register an account.
+     * To do so, it checks if the account already exists on content routing, and if not, it creates it.
+     * @param {*} username 
+     * @param {*} password 
+     * @returns true if the account was registered successfully, false otherwise.
+     */
     async register(username, password) {
-        // const cid = CID.parse(username);
+        //const cid = CID.parse(username, "base64");
 
         try {
             // get the username content routing of node
-            const user = await this.node.contentRouting.get(new TextEncoder().encode('/' + username));
-            return { success: true, message: "Username already exists" };
+            await this.node.contentRouting.get(new TextEncoder().encode('/' + username));
+            return { success: false, message: "Username already exists" };
         } catch (err) {
+            // TO DO: Check if the error is the one we want (no key found)
+
+            // username does not exist so we can register it
+
             // encrypt password using bcrypt
             const hashPass = await bcrypt.hash(password, 10);
 
-            // username does not exist so we can register it
-            await this.node.contentRouting.put(new TextEncoder().encode('/' + username), hashPass);
-            //const user = await this.node.contentRouting.get(new TextEncoder().encode('/' + username));
-            //console.log("user: ", user);
+            await this.node.contentRouting.put(new TextEncoder().encode('/' + username), new TextEncoder().encode(hashPass));
+
             return { success: true, message: "Registration successful" };
         }
     }
