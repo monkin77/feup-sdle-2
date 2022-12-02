@@ -6,7 +6,7 @@ import { bootstrap } from "@libp2p/bootstrap";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { kadDHT } from "@libp2p/kad-dht";
-import { hashPassword } from "../utils.js";
+import { hashPassword, comparePassword } from "../utils.js";
 
 const getNodeOptions = () => {
     const bootstrap1 = `/ip4/${process.env.BOOTSTRAP_1_IP}/tcp/${process.env.BOOTSTRAP_1_PORT}/p2p/${process.env.BOOTSTRAP_1_ID}`;
@@ -85,6 +85,31 @@ class Node {
             await this.node.contentRouting.put(new TextEncoder().encode("/" + username), new TextEncoder().encode(hashPass));
 
             return { success: true, message: "Registration successful" };
+        }
+    }
+
+    /**
+     * Function to login to an account.
+     * @param {*} username 
+     * @param {*} password 
+     * @returns success: true if the login was successful, false with error otherwise.
+     */
+    async login(username, password) {
+        try {
+            // get the username content routing of node
+            let hashedPass = await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
+            hashedPass = new TextDecoder().decode(hashedPass);
+
+            if (await comparePassword(password, hashedPass)) {
+                return { success: true, message: "Login successful" };
+            } else {
+                return { success: false, message: "Wrong password" };
+            }
+        } catch (err) {
+            console.log("err: ", err);
+            // TO DO: Check if the error is the one we want (no key found)
+
+            return { success: false, message: "Username does not exist" };
         }
     }
 
