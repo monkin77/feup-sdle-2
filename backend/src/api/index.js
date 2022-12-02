@@ -9,6 +9,10 @@ export default () => {
         res.json({message: "Hello World!"});
     });
 
+    
+    // Routes
+    app.post("/register", registerHandler);
+
     // TODO: Test endpoint, remove later
     app.post("/stop", async (req, res) => {
         await Node.stop();
@@ -17,3 +21,11 @@ export default () => {
 
     return app;
 };
+
+
+async function registerHandler(req, res) {
+    const username = req.body.username;
+    const password = req.body.password;
+    const result = await Node.register(username, password);
+    res.send(result);
+}
