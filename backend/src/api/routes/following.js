@@ -1,4 +1,4 @@
-import singletonNode from "../../models/Node.js";
+import node from "../../models/Node.js";
 
 /**
  * Handles the following of a new user.
@@ -7,7 +7,7 @@ import singletonNode from "../../models/Node.js";
  */
 export async function followHandler(req, res) {
     const username = req.body.username;
-    const result = await singletonNode.follow(username);
+    const result = await node.follow(username);
     res.send(result);
 }
 
@@ -18,6 +18,6 @@ export async function followHandler(req, res) {
  */
 export async function unfollowHandler(req, res) {
     const username = req.body.username;
-    const result = await singletonNode.unfollow(username);
+    const result = await node.unfollow(username);
     res.send(result);
 }

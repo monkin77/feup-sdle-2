@@ -1,6 +1,7 @@
 import {Router} from "express";
 import {registerHandler, loginHandler} from "./routes/authentication.js";
 import {followHandler, unfollowHandler} from "./routes/following.js";
+import node from "../models/Node.js";
 
 export default () => {
     const app = Router();
@@ -19,7 +20,7 @@ export default () => {
 
     // TODO: Test endpoint, remove later
     app.post("/stop", async (req, res) => {
-        await Node.stop();
+        await node.stop();
         res.json({});
     });
 
