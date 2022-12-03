@@ -35,7 +35,7 @@ const getNodeOptions = () => {
         dht: kadDHT(),
         connectionManager: {
             autoDial: true, // auto connect to discovered peers
-        }
+        },
     });
 };
 
@@ -121,15 +121,17 @@ class Node {
         try {
             await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
             // username exists so we can follow it
-
-            this.node.pubsub.subscribe(username);
-            this.node.pubsub.on(username, (msg) => {
-                console.log("Message received: ", msg);
-            });
+            
+            this.node.pubsub.addEventListener('message', (evt) => {
+                console.log(evt)
+              })
+            await this.node.pubsub.subscribe(username);
+            return { success: true, message: `Follow successful user ${username}` };
         }
         catch (err) {
             console.log("err: ", err);
             // TO DO: Check if the error is the one we want (no key found)
+            return { success: false, message: `Failed to follow user ${username}` };
         }
     }
 
@@ -142,11 +144,15 @@ class Node {
             await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
             // username exists so we can unfollow it
 
-            this.node.pubsub.unsubscribe(username);
+            await this.node.pubsub.unsubscribe(username);
+            
+            return { success: true, message: `Unfollow successful user ${username}` };
         }
         catch (err) {
             console.log("err: ", err);
             // TO DO: Check if the error is the one we want (no key found)
+            
+            return { success: false, message: `Failed to unfollow user ${username}` };
         }
     }
 

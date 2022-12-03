@@ -1,4 +1,4 @@
-import Node from "../../models/Node.js";
+import singletonNode from "../../models/Node.js";
 
 /**
  * Handles the registration of a new user.
@@ -10,7 +10,7 @@ import Node from "../../models/Node.js";
 export async function registerHandler(req, res) {
   const username = req.body.username;
   const password = req.body.password;
-  const result = await Node.register(username, password);
+  const result = await singletonNode.register(username, password);
   res.send(result);
 }
 
@@ -25,6 +25,6 @@ export async function registerHandler(req, res) {
 export async function loginHandler(req, res) {
   const username = req.body.username;
   const password = req.body.password;
-  const result = await Node.login(username, password);
+  const result = await singletonNode.login(username, password);
   res.send(result);
 }
