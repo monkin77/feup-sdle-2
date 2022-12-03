@@ -1,5 +1,6 @@
 import {Router} from "express";
 import {registerHandler, loginHandler} from "./routes/authentication.js";
+import {followHandler, unfollowHandler} from "./routes/following.js";
 
 export default () => {
     const app = Router();
@@ -13,6 +14,8 @@ export default () => {
     // Routes
     app.post("/register", registerHandler);
     app.post("/login", loginHandler);
+    app.post("/follow", followHandler);
+    app.post("/unfollow", unfollowHandler);
 
     // TODO: Test endpoint, remove later
     app.post("/stop", async (req, res) => {

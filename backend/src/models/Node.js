@@ -113,6 +113,43 @@ class Node {
         }
     }
 
+    /**
+     * Subscribe to a user and set the callback function to be called when a new message is received.
+     * @param {*} username Username of the user to follow
+     */
+    async follow(username) {
+        try {
+            await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
+            // username exists so we can follow it
+
+            this.node.pubsub.subscribe(username);
+            this.node.pubsub.on(username, (msg) => {
+                console.log("Message received: ", msg);
+            });
+        }
+        catch (err) {
+            console.log("err: ", err);
+            // TO DO: Check if the error is the one we want (no key found)
+        }
+    }
+
+    /**
+     * Unsubscribe from a user.
+     * @param {*} username 
+     */
+    async unfollow(username) {
+        try {
+            await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
+            // username exists so we can unfollow it
+
+            this.node.pubsub.unsubscribe(username);
+        }
+        catch (err) {
+            console.log("err: ", err);
+            // TO DO: Check if the error is the one we want (no key found)
+        }
+    }
+
     async stop() {
         await this.node.stop();
         console.log("Node has stopped");
