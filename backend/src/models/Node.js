@@ -22,14 +22,15 @@ const getNodeOptions = () => {
         transports: [tcp()],
         connectionEncryption: [noise()],
         streamMuxers: [mplex()],
-        pubsub: gossipsub({ allowPublishToZeroPeers: true }),
+        pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true }),
         peerDiscovery: [
             bootstrap({
                 interval: 60e3,
                 list: bootstrapAddresses,
             }),
             pubsubPeerDiscovery({
-                interval: 1000
+                interval: 1000,
+                topics: [],
             })
         ],
         dht: kadDHT(),
@@ -57,6 +58,21 @@ class Node {
 
         const listenAddresses = this.node.getMultiaddrs();
         console.log("Listening on addresses: ", listenAddresses);
+
+        this.node.info = {} // Username, followers, following, timeline, posts
+
+        this.node.pubsub.addEventListener('message', (evt) => {
+            if (evt.detail.topic === '_peer-discovery._p2p._pubsub') {
+                return;
+            }
+            console.log(evt.detail.topic);
+            if (this.node.info.following.includes(evt.detail.topic)) {
+                console.log("Here is the message: ", JSON.parse(new TextDecoder().decode(evt.detail.data)).text);
+            }
+            else {
+                console.log("Not a subscriber");
+            }
+        });
     }
 
     /**
@@ -75,7 +91,7 @@ class Node {
             return { success: false, message: "Username already exists" };
         } catch (err) {
             console.log("err: ", err);
-            // TO DO: Check if the error is the one we want (no key found)
+            // TODO: Check if the error is the one we want (no key found)
 
             // username does not exist so we can register it
 
@@ -101,13 +117,19 @@ class Node {
             hashedPass = new TextDecoder().decode(hashedPass);
 
             if (await comparePassword(password, hashedPass)) {
+                this.node.info.username = username;
+                this.node.info.followers = [];
+                this.node.info.following = [];
+                this.node.info.timeline = [];
+                this.node.info.posts = [];
+
                 return { success: true, message: "Login successful" };
             } else {
                 return { success: false, message: "Wrong password" };
             }
         } catch (err) {
             console.log("err: ", err);
-            // TO DO: Check if the error is the one we want (no key found)
+            // TODO: Check if the error is the one we want (no key found)
 
             return { success: false, message: "Username does not exist" };
         }
@@ -119,18 +141,16 @@ class Node {
      */
     async follow(username) {
         try {
-            await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
+            //await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
             // username exists so we can follow it
-            
-            this.node.pubsub.addEventListener('message', (evt) => {
-                console.log(evt)
-              })
             await this.node.pubsub.subscribe(username);
+
+            this.node.info.following.push(username);
             return { success: true, message: `Follow successful user ${username}` };
         }
         catch (err) {
             console.log("err: ", err);
-            // TO DO: Check if the error is the one we want (no key found)
+            // TODO: Check if the error is the one we want (no key found)
             return { success: false, message: `Failed to follow user ${username}` };
         }
     }
@@ -141,18 +161,45 @@ class Node {
      */
     async unfollow(username) {
         try {
-            await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
+            // await this.node.contentRouting.get(new TextEncoder().encode("/" + username));
             // username exists so we can unfollow it
 
             await this.node.pubsub.unsubscribe(username);
-            
+            this.node.info.following.splice(this.node.info["following"].indexOf(username), 1);
             return { success: true, message: `Unfollow successful user ${username}` };
         }
         catch (err) {
             console.log("err: ", err);
-            // TO DO: Check if the error is the one we want (no key found)
+            // TODO: Check if the error is the one we want (no key found)
             
             return { success: false, message: `Failed to unfollow user ${username}` };
+        }
+    }
+
+    // TODO: WIP
+    /**
+     * Function to post a message.
+     * @param {*} text Post content message
+     * @returns  success: true if the post was successful, false with error otherwise.
+     */
+    async post(text) {
+        try {
+            const post = {
+                username: this.node.info.username,
+                text: text,
+                timestamp: Date.now()
+            };
+
+            await this.node.pubsub.publish(this.node.info.username, new TextEncoder().encode(JSON.stringify(post)));
+            this.node.info.posts.push(post);
+            this.node.info.timeline.push(post);
+            return { success: true, message: "Post successful" };
+        }
+        catch (err) {
+            console.log("err: ", err);
+            // TODO: Check if the error is the one we want (no key found)
+            
+            return { success: false, error: "Failed to post" };
         }
     }
 

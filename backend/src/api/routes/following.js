@@ -21,3 +21,9 @@ export async function unfollowHandler(req, res) {
     const result = await node.unfollow(username);
     res.send(result);
 }
+
+export async function postHandler(req, res) {
+    const text = req.body.text;
+    const result = await node.post(text);
+    res.send(result);
+}

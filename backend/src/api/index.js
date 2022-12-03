@@ -1,6 +1,6 @@
 import {Router} from "express";
 import {registerHandler, loginHandler} from "./routes/authentication.js";
-import {followHandler, unfollowHandler} from "./routes/following.js";
+import {followHandler, unfollowHandler, postHandler} from "./routes/following.js";
 import node from "../models/Node.js";
 
 export default () => {
@@ -17,6 +17,7 @@ export default () => {
     app.post("/login", loginHandler);
     app.post("/follow", followHandler);
     app.post("/unfollow", unfollowHandler);
+    app.post("/post", postHandler);
 
     // TODO: Test endpoint, remove later
     app.post("/stop", async (req, res) => {
