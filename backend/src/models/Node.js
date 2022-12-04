@@ -8,7 +8,7 @@ import {gossipsub} from "@chainsafe/libp2p-gossipsub";
 import {kadDHT} from "@libp2p/kad-dht";
 import {getContent, putContent} from "../lib/dht.js";
 import {parseBootstrapAddresses} from "../lib/parser.js";
-import {comparePassword, hashPassword} from "../lib/passwords.js";
+import {comparePassword} from "../lib/passwords.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -98,28 +98,13 @@ class Node {
     }
 
     /**
-     * Function to register an account.
-     * To do so, it checks if the account already exists on content routing, and if not, it creates it.
+     * Registers an account.
      * @param {*} username
      * @param {*} password
-     * @returns true if the account was registered successfully, false otherwise.
      */
     async register(username, password) {
-        try {
-            await getContent(this.node, `/${username}`);
-            return {success: false, message: "Username already exists"};
-        } catch (err) {
-            if (err.code !== "ERR_NOT_FOUND" && err.code !== "ERR_NO_PEERS_IN_ROUTING_TABLE") {
-                return {success: false, message: "Error while registering"};
-            }
-
-            // If the account does not exist, create it
-            const hashedPassword = await hashPassword(password);
-            await putContent(this.node, `/${username}`, hashedPassword);
-            await putContent(this.node, `/${username}-info`, this.node.info);
-
-            return {success: true, message: "Registration successful"};
-        }
+        await putContent(this.node, `/${username}`, password);
+        await putContent(this.node, `/${username}-info`, this.node.info);
     }
 
     /**
@@ -292,6 +277,10 @@ class Node {
             timeline: [],
             posts: [],
         };
+    }
+
+    getNode() {
+        return this.node;
     }
 }
 
