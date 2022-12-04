@@ -8,7 +8,6 @@ import {gossipsub} from "@chainsafe/libp2p-gossipsub";
 import {kadDHT} from "@libp2p/kad-dht";
 import {getContent, putContent} from "../lib/dht.js";
 import {parseBootstrapAddresses} from "../lib/parser.js";
-import {comparePassword} from "../lib/passwords.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -45,26 +44,29 @@ class Node {
         }
 
         // If the event is from a Topic of the Following Users, it's a post Message
-        if (this.node.info.following.includes(evt.detail.topic)) {
+        if (this.info.following.includes(evt.detail.topic)) {
             const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
-            this.node.info.timeline.push(data);
+            this.info.timeline.push(data);
 
-            await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
-        } else if (evt.detail.topic === "/" + this.node.info.username + "/follow") {
+            await putContent(this.node, `/${this.info.username}-info`, this.info);
+
+        } else if (evt.detail.topic === "/" + this.info.username + "/follow") {
             // If the event is from the Followers Topic, is a Follow Message
             const username = new TextDecoder().decode(evt.detail.data);
-            this.node.info.followers.push(username);
+            this.info.followers.push(username);
 
-            await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
-        } else if (evt.detail.topic === `/${this.node.info.username}-unfollow`) {
+            await putContent(this.node, `/${this.info.username}-info`, this.info);
+
+        } else if (evt.detail.topic === "/" + this.info.username + "/unfollow") {
             // If the event is from the Followers Topic, is a Unfollow Message
             const username = new TextDecoder().decode(evt.detail.data);
-            this.node.info.followers.splice(
-                this.node.info.followers.indexOf(username),
+
+            this.info.followers.splice(
+                this.info["followers"].indexOf(username),
                 1
             );
 
-            await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
+            await putContent(this.node, `/${this.info.username}-info`, this.info);
         }
     };
 
@@ -86,7 +88,7 @@ class Node {
         const listenAddresses = this.node.getMultiaddrs();
         console.log("Listening on addresses: ", listenAddresses);
 
-        this.node.isLoggedIn = false;
+        this.loggedIn = false;
         this.resetInfo();
 
         this.node.pubsub.addEventListener("message", this.subscriptionHandler);
@@ -104,38 +106,19 @@ class Node {
      */
     async register(username, password) {
         await putContent(this.node, `/${username}`, password);
-        await putContent(this.node, `/${username}-info`, this.node.info);
+        await putContent(this.node, `/${username}-info`, this.info);
     }
 
     /**
-     * Function to login to an account.
+     * Logs in to an account.
      * @param {*} username
-     * @param {*} password
-     * @returns success: true if the login was successful, false with error otherwise.
      */
-    async login(username, password) {
+    async login(username) {
+        this.info.username = username;
+        this.loggedIn = true;
 
-        if (this.node.isLoggedIn)
-            return {success: false, message: "Already logged in"};
-
-        try {
-            const hashedPass = await getContent(this.node, `/${username}`);
-
-            if (await comparePassword(password, hashedPass)) {
-                this.node.info.username = username;
-                this.node.isLoggedIn = true;
-
-                this.node.pubsub.subscribe("/" + this.node.info.username + "/follow");
-                this.node.pubsub.subscribe("/" + this.node.info.username + "/unfollow");
-
-                return {success: true, message: "Login successful"};
-            } else {
-                return {success: false, message: "Wrong password"};
-            }
-        } catch (err) {
-            console.log("err: ", err);
-            return {success: false, message: "Username does not exist"};
-        }
+        this.node.pubsub.subscribe(`/${this.info.username}/follow`);
+        this.node.pubsub.subscribe(`/${this.info.username}/unfollow`);
     }
 
     /**
@@ -143,7 +126,7 @@ class Node {
      * @returns success: true if the login was successful, false with error otherwise.
      */
     async logout() {
-        if (!this.node.isLoggedIn)
+        if (!this.loggedIn)
             return {success: false, message: "Already logged out"};
 
         await this.stop();
@@ -156,11 +139,11 @@ class Node {
      * @param {*} username Username of the user to follow
      */
     async follow(username) {
-        if (!this.node.isLoggedIn) {
+        if (!this.loggedIn) {
             return {success: false, message: "You must login"};
-        } else if (this.node.info.following.includes(username)) {
+        } else if (this.info.following.includes(username)) {
             return {success: false, message: "Already following"};
-        } else if (this.node.info.username === username) {
+        } else if (this.info.username === username) {
             return {success: false, message: "You cannot follow yourself"};
         }
 
@@ -171,12 +154,12 @@ class Node {
             this.node.pubsub.subscribe(username);
 
             this.node.pubsub.publish(
-                `/${username}-follow`,
-                new TextEncoder().encode(this.node.info.username)
+                "/" + username + "/follow",
+                new TextEncoder().encode(this.info.username)
             );
 
-            this.node.info.following.push(username);
-            await putContent(this.node, `/${username}-info`, this.node.info);
+            this.info.following.push(username);
+            await putContent(this.node, `/${username}-info`, this.info);
 
             return {success: true, message: `Follow successful user ${username}`};
         } catch (err) {
@@ -189,9 +172,9 @@ class Node {
      * @param {*} username
      */
     async unfollow(username) {
-        if (!this.node.isLoggedIn)
+        if (!this.loggedIn)
             return {success: false, message: "You must login"};
-        else if (!this.node.info.following.includes(username))
+        else if (!this.info.following.includes(username))
             return {success: false, message: "You are not following this user"};
 
         try {
@@ -199,17 +182,17 @@ class Node {
 
             // username exists so we can unfollow it
             this.node.pubsub.unsubscribe(username);
-            this.node.info.following.splice(
-                this.node.info.following.indexOf(username),
+            this.info.following.splice(
+                this.info.following.indexOf(username),
                 1
             );
 
             this.node.pubsub.publish(
-                `/${username}-unfollow`,
-                new TextEncoder().encode(this.node.info.username)
+                "/" + username + "/unfollow",
+                new TextEncoder().encode(this.info.username)
             );
 
-            await putContent(this.node, `/${username}-info`, this.node.info);
+            await putContent(this.node, `/${username}-info`, this.info);
 
             return {success: true, message: `Unfollow successful user ${username}`};
         } catch (err) {
@@ -224,25 +207,25 @@ class Node {
      * @returns  success: true if the post was successful, false with error otherwise.
      */
     async post(text) {
-        if (!this.node.isLoggedIn)
+        if (!this.loggedIn)
             return {success: false, message: "You must login"};
 
         try {
             const post = {
-                username: this.node.info.username,
+                username: this.info.username,
                 text: text,
                 timestamp: Date.now(),
             };
 
             await this.node.pubsub.publish(
-                this.node.info.username,
+                this.info.username,
                 new TextEncoder().encode(JSON.stringify(post))
             );
 
-            this.node.info.posts.push(post);
-            this.node.info.timeline.push(post);
+            this.info.posts.push(post);
+            this.info.timeline.push(post);
 
-            await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
+            await putContent(this.node, `/${this.info.username}-info`, this.info);
 
             return {success: true, message: "Post successful"};
         } catch (err) {
@@ -270,7 +253,7 @@ class Node {
      * Reset this node's information.
      */
     resetInfo() {
-        this.node.info = {
+        this.info = {
             username: "",
             followers: [],
             following: [],
@@ -281,6 +264,10 @@ class Node {
 
     getNode() {
         return this.node;
+    }
+
+    isLoggedIn() {
+        return this.loggedIn;
     }
 }
 

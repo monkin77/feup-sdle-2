@@ -1,6 +1,6 @@
 import node from "../../models/Node.js";
 import {Router} from "express";
-import {isNotRegistered} from "../middleware/auth.js";
+import {isNotLoggedIn, isNotRegistered, validCredentials} from "../middleware/auth.js";
 import {hashPassword} from "../../lib/passwords.js";
 
 const router = Router();
@@ -9,13 +9,12 @@ export default (app) => {
     app.use("/auth", router);
 
     router.post("/register", isNotRegistered, registerHandler);
-    router.post("/login", loginHandler);
+    router.post("/login", isNotLoggedIn, validCredentials, loginHandler);
     router.post("/logout", logoutHandler);
 };
 
 /**
- * Handles the registration of a new user.
- * Sends a register request to the node after checking if the account already exists on content routing.
+ * Handles the registration of a new user. Sends a register request to the node.
  */
 async function registerHandler(req, res) {
     const hashedPassword = await hashPassword(req.body.password);
@@ -24,14 +23,10 @@ async function registerHandler(req, res) {
 }
 
 /**
- * Handles the login of a user.
- * To do so, sends a login request to the node after checking if the account already exists
- * on content routing. If so, checks if the password is correct.
+ * Handles the login of a user. Sends a login request to the node.
  */
 async function loginHandler(req, res) {
-    const username = req.body.username;
-    const password = req.body.password;
-    const result = await node.login(username, password);
+    const result = await node.login(req.body.username);
     res.send(result);
 }
 
