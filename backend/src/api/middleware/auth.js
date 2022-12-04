@@ -42,7 +42,7 @@ export const isNotLoggedIn = async (req, res, next) => {
 export const isLoggedIn = async (req, res, next) => {
     if (!node.isLoggedIn()) {
         return next({
-            status: StatusCodes.CONFLICT,
+            status: StatusCodes.UNAUTHORIZED,
             error: "Not logged in",
         });
     }

@@ -1,7 +1,7 @@
 import node from "../../models/Node.js";
 import {Router} from "express";
 import {isLoggedIn} from "../middleware/auth.js";
-import {canFollow, existingUser} from "../middleware/user.js";
+import {canFollow, existingUser, isFollowing} from "../middleware/user.js";
 
 const router = Router();
 
@@ -10,7 +10,7 @@ export default (app) => {
 
     router.get("/:username/followers", getFollowersHandler);
     router.post("/:username/follow", isLoggedIn, existingUser, canFollow, followHandler);
-    router.post("/:username/unfollow", unfollowHandler);
+    router.post("/:username/unfollow", isLoggedIn, existingUser, isFollowing, unfollowHandler);
 };
 
 /**
@@ -35,6 +35,6 @@ async function followHandler(req, res) {
  */
 async function unfollowHandler(req, res) {
     const username = req.params.username;
-    const result = await node.unfollow(username);
-    res.send(result);
+    await node.unfollow(username);
+    res.json({});
 }

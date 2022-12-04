@@ -137,7 +137,7 @@ class Node {
         this.node.pubsub.subscribe(username);
 
         await this.node.pubsub.publish(
-            "/" + username + "/follow",
+            `/${username}/follow`,
             new TextEncoder().encode(this.info.username)
         );
 
@@ -150,33 +150,18 @@ class Node {
      * @param {*} username
      */
     async unfollow(username) {
-        if (!this.loggedIn)
-            return {success: false, message: "You must login"};
-        else if (!this.info.following.includes(username))
-            return {success: false, message: "You are not following this user"};
+        this.node.pubsub.unsubscribe(username);
+        this.info.following.splice(
+            this.info["following"].indexOf(username),
+            1
+        );
 
-        try {
-            await getContent(this.node, `/${username}`);
+        await this.node.pubsub.publish(
+            `/${username}/unfollow`,
+            new TextEncoder().encode(this.info.username)
+        );
 
-            // username exists so we can unfollow it
-            this.node.pubsub.unsubscribe(username);
-            this.info.following.splice(
-                this.info.following.indexOf(username),
-                1
-            );
-
-            this.node.pubsub.publish(
-                "/" + username + "/unfollow",
-                new TextEncoder().encode(this.info.username)
-            );
-
-            await putContent(this.node, `/${username}-info`, this.info);
-
-            return {success: true, message: `Unfollow successful user ${username}`};
-        } catch (err) {
-            return {success: false, message: "User does not exist"};
-
-        }
+        await putContent(this.node, `/${username}-info`, this.info);
     }
 
     /**

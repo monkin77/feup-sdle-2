@@ -23,6 +23,21 @@ export const canFollow = async (req, res, next) => {
 };
 
 /**
+ * Verifies if the user is following another.
+ */
+export const isFollowing = async (req, res, next) => {
+    const username = req.params.username;
+    if (!node.info.following.includes(username)) {
+        return next({
+            status: StatusCodes.CONFLICT,
+            error: `You're not following ${username}`,
+        });
+    }
+
+    return next();
+};
+
+/**
  * Verifies if the user is registered on the network.
  */
 export const existingUser = async (req, res, next) => {
