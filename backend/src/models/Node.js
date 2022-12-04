@@ -52,20 +52,17 @@ class Node {
             this.node.info.timeline.push(data);
 
             await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
-
-        } else if ( evt.detail.topic === "/" + this.node.info.username + "/follow" ) {
+        } else if (evt.detail.topic === `/${this.node.info.username}-follow`) {
             // If the event is from the Followers Topic, is a Follow Message
             const username = new TextDecoder().decode(evt.detail.data);
             this.node.info.followers.push(username);
 
             await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
-
-        } else if (evt.detail.topic === "/" + this.node.info.username + "/unfollow") {
+        } else if (evt.detail.topic === `/${this.node.info.username}-unfollow`) {
             // If the event is from the Followers Topic, is a Unfollow Message
             const username = new TextDecoder().decode(evt.detail.data);
-
             this.node.info.followers.splice(
-                this.node.info["followers"].indexOf(username),
+                this.node.info.followers.indexOf(username),
                 1
             );
 
@@ -204,7 +201,7 @@ class Node {
             this.node.pubsub.subscribe(username);
 
             this.node.pubsub.publish(
-                "/" + username + "/follow",
+                `/${username}-follow`,
                 new TextEncoder().encode(this.node.info.username)
             );
 
@@ -229,16 +226,16 @@ class Node {
 
         try {
             await getContent(this.node, `/${username}`);
+            
             // username exists so we can unfollow it
-
             this.node.pubsub.unsubscribe(username);
             this.node.info.following.splice(
-                this.node.info["following"].indexOf(username),
+                this.node.info.following.indexOf(username),
                 1
             );
 
             this.node.pubsub.publish(
-                "/" + username + "/unfollow",
+                `/${username}-unfollow`,
                 new TextEncoder().encode(this.node.info.username)
             );
 
