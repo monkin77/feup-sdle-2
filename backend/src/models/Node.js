@@ -6,8 +6,9 @@ import {bootstrap} from "@libp2p/bootstrap";
 import {pubsubPeerDiscovery} from "@libp2p/pubsub-peer-discovery";
 import {gossipsub} from "@chainsafe/libp2p-gossipsub";
 import {kadDHT} from "@libp2p/kad-dht";
-import {comparePassword, getContent, hashPassword, putContent} from "../utils.js";
+import {getContent, putContent} from "../lib/dht.js";
 import {parseBootstrapAddresses} from "../lib/parser.js";
+import {comparePassword, hashPassword} from "../lib/passwords.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();

@@ -1,30 +1,9 @@
-import bcrypt from "bcryptjs";
-
-/**
- * Hashes a password using bcrypt with constant salt
- * @param {*} pass Plain text password
- * @returns Hashed password 
- */
-export const hashPassword = async(pass) => {
-    return await bcrypt.hash(pass, 10);
-};
-
-/**
- * Compares a password with a hashed password
- * @param {*} pass 
- * @param {*} hash 
- * @returns true if the password is correct, false otherwise
- */
-export const comparePassword = async (pass, hash) => {
-    return await bcrypt.compare(pass, hash);
-};
-
 /**
  * Get the content from the DHT
  * Catches the error of no peers in routing table
  * in case it is the first node in the network
- * @param {*} node 
- * @param {*} key 
+ * @param {*} node
+ * @param {*} key
  * @returns content if success, throws error otherwise
  */
 export const getContent = async (node, key) => {
@@ -37,8 +16,8 @@ export const getContent = async (node, key) => {
 
 /**
  * Put the content in the DHT
- * @param {*} node 
- * @param {string} key 
+ * @param {*} node
+ * @param {string} key
  * @param {*} value
  */
 export const putContent = async (node, key, value) => {
