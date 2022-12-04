@@ -19,6 +19,11 @@ export default () => {
         res.json({ message: "Hello World!" });
     });
 
+    app.get("/followers", async (req, res) => {
+        const result = await node.getFollowers(req.query.username);
+        res.json({ followers: result.data.followers });
+    });
+
     // Routes
     app.post("/register", registerHandler);
     app.post("/login", loginHandler);
