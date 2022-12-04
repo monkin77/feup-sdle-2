@@ -167,34 +167,26 @@ class Node {
     /**
      * Function to post a message.
      * @param {*} text Post content message
-     * @returns  success: true if the post was successful, false with error otherwise.
+     * @returns New created post
      */
     async post(text) {
-        if (!this.loggedIn)
-            return {success: false, message: "You must login"};
+        const post = {
+            username: this.info.username,
+            text: text,
+            timestamp: Date.now(),
+        };
 
-        try {
-            const post = {
-                username: this.info.username,
-                text: text,
-                timestamp: Date.now(),
-            };
+        await this.node.pubsub.publish(
+            this.info.username,
+            new TextEncoder().encode(JSON.stringify(post))
+        );
 
-            await this.node.pubsub.publish(
-                this.info.username,
-                new TextEncoder().encode(JSON.stringify(post))
-            );
+        this.info.posts.push(post);
+        this.info.timeline.push(post);
 
-            this.info.posts.push(post);
-            this.info.timeline.push(post);
+        await putContent(this.node, `/${this.info.username}-info`, this.info);
 
-            await putContent(this.node, `/${this.info.username}-info`, this.info);
-
-            return {success: true, message: "Post successful"};
-        } catch (err) {
-            console.log("err: ", err);
-            return {success: false, error: "Failed to post"};
-        }
+        return post;
     }
 
     /**
