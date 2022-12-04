@@ -134,32 +134,15 @@ class Node {
      * @param {*} username Username of the user to follow
      */
     async follow(username) {
-        if (!this.loggedIn) {
-            return {success: false, message: "You must login"};
-        } else if (this.info.following.includes(username)) {
-            return {success: false, message: "Already following"};
-        } else if (this.info.username === username) {
-            return {success: false, message: "You cannot follow yourself"};
-        }
+        this.node.pubsub.subscribe(username);
 
-        try {
-            await getContent(this.node, `/${username}`);
+        await this.node.pubsub.publish(
+            "/" + username + "/follow",
+            new TextEncoder().encode(this.info.username)
+        );
 
-            // username exists so we can follow it
-            this.node.pubsub.subscribe(username);
-
-            this.node.pubsub.publish(
-                "/" + username + "/follow",
-                new TextEncoder().encode(this.info.username)
-            );
-
-            this.info.following.push(username);
-            await putContent(this.node, `/${username}-info`, this.info);
-
-            return {success: true, message: `Follow successful user ${username}`};
-        } catch (err) {
-            return {success: false, message: "User does not exist"};
-        }
+        this.info.following.push(username);
+        await putContent(this.node, `/${username}-info`, this.info);
     }
 
     /**
