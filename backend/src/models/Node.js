@@ -39,12 +39,12 @@ const getNodeOptions = () => {
 };
 
 class Node {
-    subscritionHandler = async (evt) => {
+    subscriptionHandler = async (evt) => {
         if (evt.detail.topic === "_peer-discovery._p2p._pubsub") {
             return;
         }
 
-        // If the event is from a Topic of the Following Users, is a post Message
+        // If the event is from a Topic of the Following Users, it's a post Message
         if (this.node.info.following.includes(evt.detail.topic)) {
             const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
             this.node.info.timeline.push(data);
@@ -68,19 +68,6 @@ class Node {
         }
     };
 
-    /**
-     * Function to reset the info of the node
-     */
-    resetInfo() {
-        this.node.info = {
-            username: "",
-            followers: [],
-            following: [],
-            timeline: [],
-            posts: [],
-        };
-    }
-
     async start() {
         const nodeOptions = getNodeOptions();
         this.node = await createLibp2p(nodeOptions);
@@ -102,7 +89,7 @@ class Node {
         this.node.isLoggedIn = false;
         this.resetInfo();
 
-        this.node.pubsub.addEventListener("message", this.subscritionHandler);
+        this.node.pubsub.addEventListener("message", this.subscriptionHandler);
     }
 
     async stop() {
@@ -292,6 +279,19 @@ class Node {
         } catch (err) {
             return {success: false, error: "User does not exist"};
         }
+    }
+
+    /**
+     * Reset this node's information.
+     */
+    resetInfo() {
+        this.node.info = {
+            username: "",
+            followers: [],
+            following: [],
+            timeline: [],
+            posts: [],
+        };
     }
 }
 
