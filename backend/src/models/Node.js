@@ -167,7 +167,7 @@ class Node {
     /**
      * Function to post a message.
      * @param {*} text Post content message
-     * @returns New created post
+     * @returns New created post.
      */
     async post(text) {
         const post = {
@@ -192,16 +192,11 @@ class Node {
     /**
      * Get the followers of a user.
      * @param {*} username
-     * @returns success: true with followers if could get the followers, false with error message otherwise.
+     * @returns List with the user's followers.
      */
     async getFollowers(username) {
-        //
-        try {
-            const data = await getContent(this.node, `/${username}-info`);
-            return {success: true, data: data};
-        } catch (err) {
-            return {success: false, error: "User does not exist"};
-        }
+        const data = await getContent(this.node, `/${username}-info`);
+        return data.followers;
     }
 
     /**
