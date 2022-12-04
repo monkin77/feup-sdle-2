@@ -73,6 +73,15 @@ class Node {
         this.node.info.timeline.push(data);
 
         console.log('Message: ', data.text);
+      } else if (
+        evt.detail.topic ===
+        '/' + this.node.info.username + '_follow'
+      ) {
+        // If the event is from the Followers Topic, is a Follow Message
+        const username = new TextDecoder().decode(evt.detail.data);
+        this.node.info.followers.push(username);
+
+        console.log('Followed by: ', username);
       }
     });
   }
@@ -142,12 +151,14 @@ class Node {
       let hashedPass = await this.node.contentRouting.get(
         new TextEncoder().encode('/' + username)
       );
+
       hashedPass = new TextDecoder().decode(hashedPass);
 
       if (await comparePassword(password, hashedPass)) {
-        this.resetInfo();
         this.node.info.username = username;
         this.node.isLoggedIn = true;
+
+        this.node.pubsub.subscribe('/' + this.node.info.username + '_follow');
 
         return { success: true, message: 'Login successful' };
       } else {
@@ -191,6 +202,11 @@ class Node {
       );
       // username exists so we can follow it
       this.node.pubsub.subscribe(username);
+
+      this.node.pubsub.publish(
+        '/' + username + '_follow',
+        new TextEncoder().encode(this.node.info.username)
+      );
 
       this.node.info.following.push(username);
       return { success: true, message: `Follow successful user ${username}` };
