@@ -37,6 +37,20 @@ export const isNotLoggedIn = async (req, res, next) => {
 };
 
 /**
+ * Verifies if the user is logged in.
+ */
+export const isLoggedIn = async (req, res, next) => {
+    if (!node.isLoggedIn()) {
+        return next({
+            status: StatusCodes.CONFLICT,
+            error: "Not logged in",
+        });
+    }
+
+    return next();
+};
+
+/**
  * Verifies if the given credentials are valid.
  * Checks if the user is registered and if the password is correct.
  */

@@ -122,16 +122,11 @@ class Node {
     }
 
     /**
-     * Function to logout of account.
-     * @returns success: true if the login was successful, false with error otherwise.
+     * Function to logout of account. Stops the node and restarts it for a later login.
      */
     async logout() {
-        if (!this.loggedIn)
-            return {success: false, message: "Already logged out"};
-
         await this.stop();
         await this.start();
-        return {success: true, message: "Logged out successfully"};
     }
 
     /**

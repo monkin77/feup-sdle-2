@@ -1,6 +1,6 @@
 import node from "../../models/Node.js";
 import {Router} from "express";
-import {isNotLoggedIn, isNotRegistered, validCredentials} from "../middleware/auth.js";
+import {isLoggedIn, isNotLoggedIn, isNotRegistered, validCredentials} from "../middleware/auth.js";
 import {hashPassword} from "../../lib/passwords.js";
 
 const router = Router();
@@ -10,7 +10,7 @@ export default (app) => {
 
     router.post("/register", isNotRegistered, registerHandler);
     router.post("/login", isNotLoggedIn, validCredentials, loginHandler);
-    router.post("/logout", logoutHandler);
+    router.post("/logout", isLoggedIn, logoutHandler);
 };
 
 /**
@@ -26,14 +26,14 @@ async function registerHandler(req, res) {
  * Handles the login of a user. Sends a login request to the node.
  */
 async function loginHandler(req, res) {
-    const result = await node.login(req.body.username);
-    res.send(result);
+    await node.login(req.body.username);
+    res.json({});
 }
 
 /**
- * Handles the logout of a user by calling the node's logout method.
+ * Handles the logout of a user. Sends a logout request to the node.
  */
 async function logoutHandler(req, res) {
-    const result = await node.logout();
-    res.send(result);
+    await node.logout();
+    res.json({});
 }
