@@ -41,6 +41,51 @@ const getNodeOptions = () => {
 };
 
 class Node {
+    subscritionHandler = async (evt) => {
+        if (evt.detail.topic === "_peer-discovery._p2p._pubsub") {
+            return;
+        }
+
+        // If the event is from a Topic of the Following Users, is a post Message
+        if (this.node.info.following.includes(evt.detail.topic)) {
+            const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
+            this.node.info.timeline.push(data);
+
+            await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
+
+        } else if ( evt.detail.topic === "/" + this.node.info.username + "/follow" ) {
+            // If the event is from the Followers Topic, is a Follow Message
+            const username = new TextDecoder().decode(evt.detail.data);
+            this.node.info.followers.push(username);
+
+            await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
+
+        } else if (evt.detail.topic === "/" + this.node.info.username + "/unfollow") {
+            // If the event is from the Followers Topic, is a Unfollow Message
+            const username = new TextDecoder().decode(evt.detail.data);
+
+            this.node.info.followers.splice(
+                this.node.info["followers"].indexOf(username),
+                1
+            );
+
+            await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
+        }
+    };
+
+    /**
+    * Function to reset the info of the node
+    */
+    resetInfo() {
+        this.node.info = {
+            username: "",
+            followers: [],
+            following: [],
+            timeline: [],
+            posts: [],
+        };
+    }
+
     async start() {
         const nodeOptions = getNodeOptions();
         this.node = await createLibp2p(nodeOptions);
@@ -62,37 +107,12 @@ class Node {
         this.node.isLoggedIn = false;
         this.resetInfo();
 
-        this.node.pubsub.addEventListener("message", async (evt) => {
-            if (evt.detail.topic === "_peer-discovery._p2p._pubsub") {
-                return;
-            }
+        this.node.pubsub.addEventListener("message", this.subscritionHandler);
+    }
 
-            // If the event is from a Topic of the Following Users, is a post Message
-            if (this.node.info.following.includes(evt.detail.topic)) {
-                const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
-                this.node.info.timeline.push(data);
-
-                await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
-
-            } else if ( evt.detail.topic === "/" + this.node.info.username + "/follow" ) {
-                // If the event is from the Followers Topic, is a Follow Message
-                const username = new TextDecoder().decode(evt.detail.data);
-                this.node.info.followers.push(username);
-
-                await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
-
-            } else if (evt.detail.topic === "/" + this.node.info.username + "/unfollow") {
-                // If the event is from the Followers Topic, is a Unfollow Message
-                const username = new TextDecoder().decode(evt.detail.data);
-
-                this.node.info.followers.splice(
-                    this.node.info["followers"].indexOf(username),
-                    1
-                );
-
-                await putContent(this.node, `/${this.node.info.username}-info`, this.node.info);
-            }
-        });
+    async stop() {
+        await this.node.stop();
+        console.log("Node has stopped");
     }
 
     /**
@@ -118,19 +138,6 @@ class Node {
 
             return { success: true, message: "Registration successful" };
         }
-    }
-
-    /**
-   * Function to reset the info of the node
-   */
-    resetInfo() {
-        this.node.info = {
-            username: "",
-            followers: [],
-            following: [],
-            timeline: [],
-            posts: [],
-        };
     }
 
     /**
@@ -243,23 +250,7 @@ class Node {
 
         }
     }
-
-    /**
-     * Get the followers of a user.
-     * @param {*} username 
-     * @returns success: true with followers if could get the followers, false with error message otherwise.
-     */
-    async getFollowers(username) {
-        // 
-        try {
-            const data = await getContent(this.node, `/${username}-info`);
-            return { success: true, data: data };
-        } catch (err) {
-            return { success: false, error: "User does not exist" };
-        }
-    }
   
-
     /**
    * Function to post a message.
    * @param {*} text Post content message
@@ -278,7 +269,7 @@ class Node {
 
             await this.node.pubsub.publish(
                 this.node.info.username,
-                new TextEncoder().encode(post)
+                new TextEncoder().encode(JSON.stringify(post))
             );
 
             this.node.info.posts.push(post);
@@ -293,9 +284,19 @@ class Node {
         }
     }
 
-    async stop() {
-        await this.node.stop();
-        console.log("Node has stopped");
+    /**
+     * Get the followers of a user.
+     * @param {*} username 
+     * @returns success: true with followers if could get the followers, false with error message otherwise.
+     */
+    async getFollowers(username) {
+        // 
+        try {
+            const data = await getContent(this.node, `/${username}-info`);
+            return { success: true, data: data };
+        } catch (err) {
+            return { success: false, error: "User does not exist" };
+        }
     }
 }
 
