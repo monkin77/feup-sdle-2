@@ -49,7 +49,8 @@ class Node {
         currSubscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
-                const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
+                const data = new TextDecoder().decode(evt.detail.data);
+                console.log("Decoded message: ", data);
                 topic.action(data, evt);
             });
     };
@@ -70,6 +71,7 @@ class Node {
             async username => {
                 this.info.followers.push(username);
                 await putContent(this.node, `/${this.info.username}-info`, this.info);
+                console.log("New node's info", await getContent(this.node, `/${this.info.username}-info`));
             }
         );
 
@@ -115,7 +117,6 @@ class Node {
         this.resetInfo();
 
         this.node.pubsub.addEventListener("message", this.subscriptionHandler(this.subscribedTopics));
-        this.subscribeTopics();
     }
 
     async stop() {
@@ -141,6 +142,7 @@ class Node {
         this.info.username = username;
         this.loggedIn = true;
 
+        this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.info.username}-follow`);
         this.node.pubsub.subscribe(`/${this.info.username}-unfollow`);
     }
@@ -177,7 +179,7 @@ class Node {
         await publishMessage(this.node, `/${username}-follow`, this.info.username);
 
         this.info.following.push(username);
-        await putContent(this.node, `/${username}-info`, this.info);
+        await putContent(this.node, `/${this.info.username}-info`, this.info);
     }
 
     /**
@@ -192,7 +194,7 @@ class Node {
         );
 
         await publishMessage(this.node, `/${username}-unfollow`, this.info.username);
-        await putContent(this.node, `/${username}-info`, this.info);
+        await putContent(this.node, `/${this.info.username}-info`, this.info);
     }
 
     /**
