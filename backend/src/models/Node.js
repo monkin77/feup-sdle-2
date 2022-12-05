@@ -58,32 +58,29 @@ class Node {
     subscribeTopics() {
         // New post from a followed user
         this.subscribeTopic(
-            topic => this.info.following.includes(topic),
+            topic => this.info.following.has(topic),
             async data => {
                 this.info.timeline.push(data);
-                await putContent(this.node, `/${this.info.username}-info`, this.info);
+                await putContent(this.node, `/${this.username}-info`, this.info);
             }
         );
 
         // New follower
         this.subscribeTopic(
-            `/${this.info.username}-follow`,
+            `/${this.username}-follow`,
             async username => {
-                this.info.followers.push(username);
-                await putContent(this.node, `/${this.info.username}-info`, this.info);
-                console.log("New node's info", await getContent(this.node, `/${this.info.username}-info`));
+                this.info.followers.add(username);
+                await putContent(this.node, `/${this.username}-info`, this.info);
+                console.log("New node's info", await getContent(this.node, `/${this.username}-info`));
             }
         );
 
         // Unfollowed
         this.subscribeTopic(
-            `/${this.info.username}-unfollow`,
+            `/${this.username}-unfollow`,
             async username => {
-                this.info.followers.splice(
-                    this.info["followers"].indexOf(username),
-                    1
-                );
-                await putContent(this.node, `/${this.info.username}-info`, this.info);
+                this.info.followers.delete(username);
+                await putContent(this.node, `/${this.username}-info`, this.info);
             }
         );
     }
@@ -139,12 +136,11 @@ class Node {
      * @param {*} username
      */
     async login(username) {
-        this.info.username = username;
-        this.loggedIn = true;
+        this.username = username;
 
         this.subscribeTopics();
-        this.node.pubsub.subscribe(`/${this.info.username}-follow`);
-        this.node.pubsub.subscribe(`/${this.info.username}-unfollow`);
+        this.node.pubsub.subscribe(`/${this.username}-follow`);
+        this.node.pubsub.subscribe(`/${this.username}-unfollow`);
     }
 
     /**
@@ -179,10 +175,10 @@ class Node {
     async follow(username) {
         this.node.pubsub.subscribe(`/${username}`);
 
-        await publishMessage(this.node, `/${username}-follow`, this.info.username);
+        await publishMessage(this.node, `/${username}-follow`, this.username);
 
-        this.info.following.push(username);
-        await putContent(this.node, `/${this.info.username}-info`, this.info);
+        this.info.following.add(username);
+        await putContent(this.node, `/${this.username}-info`, this.info);
     }
 
     /**
@@ -191,13 +187,10 @@ class Node {
      */
     async unfollow(username) {
         this.node.pubsub.unsubscribe(`/${username}`);
-        this.info.following.splice(
-            this.info["following"].indexOf(username),
-            1
-        );
+        this.info.following.delete(username);
 
-        await publishMessage(this.node, `/${username}-unfollow`, this.info.username);
-        await putContent(this.node, `/${this.info.username}-info`, this.info);
+        await publishMessage(this.node, `/${username}-unfollow`, this.username);
+        await putContent(this.node, `/${this.username}-info`, this.info);
     }
 
     /**
@@ -207,17 +200,16 @@ class Node {
      */
     async post(text) {
         const post = {
-            username: this.info.username,
+            username: this.username,
             text: text,
             timestamp: Date.now(),
         };
 
-        await publishMessage(this.node, `/${this.info.username}`, JSON.stringify(post));
+        await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
-        this.info.posts.push(post);
         this.info.timeline.push(post);
 
-        await putContent(this.node, `/${this.info.username}-info`, this.info);
+        await putContent(this.node, `/${this.username}-info`, this.info);
 
         return post;
     }
@@ -236,12 +228,11 @@ class Node {
      * Reset this node's information.
      */
     resetInfo() {
+        this.username = "",
         this.info = {
-            username: "",
-            followers: [],
-            following: [],
+            followers: new Set(),
+            following: new Set(),
             timeline: [],
-            posts: [],
         };
 
         this.loggedIn = false;
@@ -252,7 +243,7 @@ class Node {
     }
 
     isLoggedIn() {
-        return this.loggedIn;
+        return this.username !== "";
     }
 }
 
