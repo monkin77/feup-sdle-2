@@ -38,36 +38,62 @@ const getNodeOptions = () => {
 };
 
 class Node {
-    async subscriptionHandler(evt) {
-        if (evt.detail.topic === "_peer-discovery._p2p._pubsub") {
-            return;
-        }
+    /**
+     * Array of objects containing information about subscribed topics: conditions and actions.
+     * A condition is a function that will be compared with the received event's topic.
+     * An action is the function to be called when the condition is met.
+     */
+    subscribedTopics = [];
 
-        // If the event is from a Topic of the Following Users, it's a post Message
-        if (this.info.following.includes(evt.detail.topic)) {
-            const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
-            this.info.timeline.push(data);
+    subscriptionHandler = (subscribedTopics) => async (evt) => {
+        subscribedTopics
+            .filter(topic => topic.condition(evt.detail.topic))
+            .forEach(topic => {
+                const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
+                topic.action(data, evt);
+            });
+    };
 
-            await putContent(this.node, `/${this.info.username}-info`, this.info);
+    subscribeTopics() {
+        // New post from a followed user
+        this.subscribeTopic(
+            topic => this.info.following.includes(topic),
+            async data => {
+                this.info.timeline.push(data);
+                console.log("New post from ", data.username);
+                await putContent(this.node, `/${this.info.username}-info`, this.info);
+            }
+        );
 
-        } else if (evt.detail.topic === "/" + this.info.username + "/follow") {
-            // If the event is from the Followers Topic, is a Follow Message
-            const username = new TextDecoder().decode(evt.detail.data);
-            this.info.followers.push(username);
+        // New follower
+        this.subscribeTopic(
+            `/${this.info.username}-follow`,
+            async username => {
+                this.info.followers.push(username);
+                console.log(`New follower: ${this.info.followers}`);
+                await putContent(this.node, `/${this.info.username}-info`, this.info);
+            }
+        );
 
-            await putContent(this.node, `/${this.info.username}-info`, this.info);
+        // Unfollowed
+        this.subscribeTopic(
+            `/${this.info.username}-unfollow`,
+            async username => {
+                this.info.followers.splice(
+                    this.info["followers"].indexOf(username),
+                    1
+                );
+                await putContent(this.node, `/${this.info.username}-info`, this.info);
+            }
+        );
+    }
 
-        } else if (evt.detail.topic === "/" + this.info.username + "/unfollow") {
-            // If the event is from the Followers Topic, is a Unfollow Message
-            const username = new TextDecoder().decode(evt.detail.data);
-
-            this.info.followers.splice(
-                this.info["followers"].indexOf(username),
-                1
-            );
-
-            await putContent(this.node, `/${this.info.username}-info`, this.info);
-        }
+    subscribeTopic(condition, action) {
+        const parsedCondition = typeof condition === "function" ? condition : (topic) => topic === condition;
+        this.subscribedTopics.push({
+            condition: parsedCondition,
+            action
+        });
     }
 
     async start() {
@@ -91,7 +117,8 @@ class Node {
         this.loggedIn = false;
         this.resetInfo();
 
-        this.node.pubsub.addEventListener("message", this.subscriptionHandler);
+        this.node.pubsub.addEventListener("message", this.subscriptionHandler(this.subscribedTopics));
+        this.subscribeTopics();
     }
 
     async stop() {
@@ -117,8 +144,8 @@ class Node {
         this.info.username = username;
         this.loggedIn = true;
 
-        this.node.pubsub.subscribe(`/${this.info.username}/follow`);
-        this.node.pubsub.subscribe(`/${this.info.username}/unfollow`);
+        this.node.pubsub.subscribe(`/${this.info.username}-follow`);
+        this.node.pubsub.subscribe(`/${this.info.username}-unfollow`);
     }
 
     /**
@@ -136,7 +163,7 @@ class Node {
     async follow(username) {
         this.node.pubsub.subscribe(username);
 
-        await publishMessage(this.node, `/${username}/follow`, this.info.username);
+        await publishMessage(this.node, `/${username}-follow`, this.info.username);
 
         this.info.following.push(username);
         await putContent(this.node, `/${username}-info`, this.info);
@@ -153,7 +180,7 @@ class Node {
             1
         );
 
-        await publishMessage(this.node, `/${username}/unfollow`, this.info.username);
+        await publishMessage(this.node, `/${username}-unfollow`, this.info.username);
         await putContent(this.node, `/${username}-info`, this.info);
     }
 
