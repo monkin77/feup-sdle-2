@@ -7,7 +7,9 @@ const router = Router();
 
 export default (app) => {
     app.use("/users", router);
-
+    
+    router.get("/info", isLoggedIn, infoHandler);
+    router.get("/:username/info", isLoggedIn, existingUser, isFollowing, infoHandler);
     router.get("/:username/followers", existingUser, getFollowersHandler);
     router.post("/:username/follow", isLoggedIn, existingUser, canFollow, followHandler);
     router.post("/:username/unfollow", isLoggedIn, existingUser, isFollowing, unfollowHandler);
@@ -37,4 +39,14 @@ async function unfollowHandler(req, res) {
     const username = req.params.username;
     await node.unfollow(username);
     res.json({});
+}
+
+/**
+ * Handles getting the info of a user (itself or following).
+ */
+async function infoHandler(req, res) {
+    const username = req.params.username || node.username;
+    console.log(username);
+    const info = node.getInfo(username);
+    res.json(info);
 }

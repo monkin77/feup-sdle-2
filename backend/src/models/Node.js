@@ -245,6 +245,24 @@ class Node {
     isLoggedIn() {
         return this.username !== "";
     }
+
+    getInfo(username) {
+        if (username === this.username) {
+            return this._infoToJSON(this.info);
+        }
+        if (this.profile[username]) {
+            return this._infoToJSON(this.profile[username]);
+        }
+        return {};
+    }
+
+    _infoToJSON(info) {
+        return {
+            followers: Array.from(info.followers),
+            following: Array.from(info.following),
+            timeline: info.timeline,
+        };
+    }
 }
 
 const singletonNode = new Node();
