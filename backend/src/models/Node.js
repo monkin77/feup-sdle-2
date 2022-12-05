@@ -60,7 +60,6 @@ class Node {
             topic => this.info.following.includes(topic),
             async data => {
                 this.info.timeline.push(data);
-                console.log("New post from ", data.username);
                 await putContent(this.node, `/${this.info.username}-info`, this.info);
             }
         );
@@ -70,7 +69,6 @@ class Node {
             `/${this.info.username}-follow`,
             async username => {
                 this.info.followers.push(username);
-                console.log(`New follower: ${this.info.followers}`);
                 await putContent(this.node, `/${this.info.username}-info`, this.info);
             }
         );
