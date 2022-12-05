@@ -1,6 +1,6 @@
 import {Router} from "express";
 import node from "../../models/Node.js";
-import {isLoggedIn} from "../middleware/auth.js";
+import {isLoggedIn} from "../middleware/authentication.js";
 
 const router = Router();
 

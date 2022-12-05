@@ -22,12 +22,12 @@ export default (app) => {
 
     app.use(apiRoutes());
 
-    // Custom error handler
+    // Default error handler
     // eslint-disable-next-line no-unused-vars
     app.use((err, req, res, _) => {
         const {status = StatusCodes.INTERNAL_SERVER_ERROR, ...msg} = err;
 
-        if (!msg.error) {
+        if (!msg.error && !msg.errors) {
             console.error(err);
             msg.error = "Unexpected Error";
         }

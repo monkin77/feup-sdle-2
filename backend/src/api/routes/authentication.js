@@ -1,15 +1,16 @@
 import node from "../../models/Node.js";
 import {Router} from "express";
-import {isLoggedIn, isNotLoggedIn, isNotRegistered, validCredentials} from "../middleware/auth.js";
+import {isLoggedIn, isNotLoggedIn, isNotRegistered, validCredentials} from "../middleware/authentication.js";
 import {hashPassword} from "../../lib/passwords.js";
+import * as validators from "../middleware/validators/authentication.js";
 
 const router = Router();
 
 export default (app) => {
     app.use("/auth", router);
 
-    router.post("/register", isNotRegistered, registerHandler);
-    router.post("/login", isNotLoggedIn, validCredentials, loginHandler);
+    router.post("/register", validators.register, isNotRegistered, registerHandler);
+    router.post("/login", validators.login, isNotLoggedIn, validCredentials, loginHandler);
     router.post("/logout", isLoggedIn, logoutHandler);
 };
 
