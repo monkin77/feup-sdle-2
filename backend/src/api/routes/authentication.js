@@ -1,35 +1,40 @@
 import node from "../../models/Node.js";
+import {Router} from "express";
+import {isLoggedIn, isNotLoggedIn, isNotRegistered, validCredentials} from "../middleware/authentication.js";
+import {hashPassword} from "../../lib/passwords.js";
+import * as validators from "../middleware/validators/authentication.js";
+
+const router = Router();
+
+export default (app) => {
+    app.use("/auth", router);
+
+    router.post("/register", validators.register, isNotRegistered, registerHandler);
+    router.post("/login", validators.login, isNotLoggedIn, validCredentials, loginHandler);
+    router.post("/logout", isLoggedIn, logoutHandler);
+};
 
 /**
- * Handles the registration of a new user.
- * To do so, sends a register request to the node, which will check if the account already exists on content routing.
- * @param {*} req
- * @param {*} res message wifh format { success: true/false, message: "message" }
- * where message can be an error message if success is false
+ * Handles the registration of a new user. Sends a register request to the node.
  */
-export async function registerHandler(req, res) {
-    const username = req.body.username;
-    const password = req.body.password;
-    const result = await node.register(username, password);
-    res.send(result);
+async function registerHandler(req, res) {
+    const hashedPassword = await hashPassword(req.body.password);
+    await node.register(req.body.username, hashedPassword);
+    res.json({});
 }
 
 /**
- * Handles the login of a user.
- * To do so, sends a login request to the node, which will check if the account already exists on content routing and,
- * if so, if the password is correct.
- * @param {*} req
- * @param {*} res message wifh format { success: true/false, message: "message" }
- * where message can be an error message if success is false
+ * Handles the login of a user. Sends a login request to the node.
  */
-export async function loginHandler(req, res) {
-    const username = req.body.username;
-    const password = req.body.password;
-    const result = await node.login(username, password);
-    res.send(result);
+async function loginHandler(req, res) {
+    await node.login(req.body.username);
+    res.json({});
 }
 
-export async function logoutHandler(req, res) {
-    const result = await node.logout();
-    res.send(result);
+/**
+ * Handles the logout of a user. Sends a logout request to the node.
+ */
+async function logoutHandler(req, res) {
+    await node.logout();
+    res.json({});
 }

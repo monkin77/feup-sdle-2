@@ -1,5 +1,6 @@
 import express from "express";
 import apiRoutes from "../api/index.js";
+import {StatusCodes} from "http-status-codes";
 
 export default (app) => {
     app.use(express.json());
@@ -20,4 +21,16 @@ export default (app) => {
     });
 
     app.use(apiRoutes());
+
+    // Default error handler
+    // eslint-disable-next-line no-unused-vars
+    app.use((err, req, res, _) => {
+        const {status = StatusCodes.INTERNAL_SERVER_ERROR, ...msg} = err;
+
+        if (!msg.error && !msg.errors) {
+            console.error(err);
+            msg.error = "Unexpected Error";
+        }
+        res.status(status).json(msg);
+    });
 };
