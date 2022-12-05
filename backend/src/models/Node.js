@@ -45,8 +45,8 @@ class Node {
      */
     subscribedTopics = [];
 
-    subscriptionHandler = (subscribedTopics) => async (evt) => {
-        subscribedTopics
+    subscriptionHandler = (currSubscribedTopics) => async (evt) => {
+        currSubscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
                 const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
@@ -161,7 +161,7 @@ class Node {
      * @param {*} username Username of the user to follow
      */
     async follow(username) {
-        this.node.pubsub.subscribe(username);
+        this.node.pubsub.subscribe(`/${username}`);
 
         await publishMessage(this.node, `/${username}-follow`, this.info.username);
 
@@ -174,7 +174,7 @@ class Node {
      * @param {*} username
      */
     async unfollow(username) {
-        this.node.pubsub.unsubscribe(username);
+        this.node.pubsub.unsubscribe(`/${username}`);
         this.info.following.splice(
             this.info["following"].indexOf(username),
             1
@@ -196,7 +196,7 @@ class Node {
             timestamp: Date.now(),
         };
 
-        await publishMessage(this.node, this.info.username, JSON.stringify(post));
+        await publishMessage(this.node, `/${this.info.username}`, JSON.stringify(post));
 
         this.info.posts.push(post);
         this.info.timeline.push(post);
