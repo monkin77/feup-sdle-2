@@ -15,7 +15,7 @@ export const isNotRegistered = async (req, res, next) => {
         });
     } catch (err) {
         if (err.code !== "ERR_NOT_FOUND" && err.code !== "ERR_NO_PEERS_IN_ROUTING_TABLE") {
-            throw err;
+            return next(err);
         }
     }
 
