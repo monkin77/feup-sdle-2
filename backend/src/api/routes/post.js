@@ -1,13 +1,14 @@
 import {Router} from "express";
 import node from "../../models/Node.js";
 import {isLoggedIn} from "../middleware/authentication.js";
+import * as validators from "../middleware/validators/post.js";
 
 const router = Router();
 
 export default (app) => {
     app.use("/posts", router);
 
-    router.post("/new", isLoggedIn, postHandler);
+    router.post("/new", validators.createPost, isLoggedIn, postHandler);
 };
 
 /**
