@@ -1,6 +1,6 @@
 import node from "../../models/Node.js";
 import {StatusCodes} from "http-status-codes";
-import {getContent} from "../../lib/dht.js";
+import {getContent} from "../../lib/peer-content.js";
 
 /**
  * Verifies if the user can follow another.

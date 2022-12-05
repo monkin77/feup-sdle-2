@@ -34,3 +34,16 @@ export const putContent = async (node, key, value) => {
         console.log("No peers in routing table");
     }
 };
+
+/**
+ * Published a message to a given topic.
+ * @param node
+ * @param {string} topic
+ * @param {string} message
+ */
+export const publishMessage = async (node, topic, message) => {
+    await node.pubsub.publish(
+        topic,
+        new TextEncoder().encode(message)
+    );
+};

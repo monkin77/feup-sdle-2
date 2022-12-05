@@ -6,7 +6,7 @@ import {bootstrap} from "@libp2p/bootstrap";
 import {pubsubPeerDiscovery} from "@libp2p/pubsub-peer-discovery";
 import {gossipsub} from "@chainsafe/libp2p-gossipsub";
 import {kadDHT} from "@libp2p/kad-dht";
-import {getContent, putContent} from "../lib/dht.js";
+import {getContent, publishMessage, putContent} from "../lib/peer-content.js";
 import {parseBootstrapAddresses} from "../lib/parser.js";
 
 const getNodeOptions = () => {
@@ -38,7 +38,7 @@ const getNodeOptions = () => {
 };
 
 class Node {
-    subscriptionHandler = async (evt) => {
+    async subscriptionHandler(evt) {
         if (evt.detail.topic === "_peer-discovery._p2p._pubsub") {
             return;
         }
@@ -68,7 +68,7 @@ class Node {
 
             await putContent(this.node, `/${this.info.username}-info`, this.info);
         }
-    };
+    }
 
     async start() {
         const nodeOptions = getNodeOptions();
@@ -136,10 +136,7 @@ class Node {
     async follow(username) {
         this.node.pubsub.subscribe(username);
 
-        await this.node.pubsub.publish(
-            `/${username}/follow`,
-            new TextEncoder().encode(this.info.username)
-        );
+        await publishMessage(this.node, `/${username}/follow`, this.info.username);
 
         this.info.following.push(username);
         await putContent(this.node, `/${username}-info`, this.info);
@@ -156,11 +153,7 @@ class Node {
             1
         );
 
-        await this.node.pubsub.publish(
-            `/${username}/unfollow`,
-            new TextEncoder().encode(this.info.username)
-        );
-
+        await publishMessage(this.node, `/${username}/unfollow`, this.info.username);
         await putContent(this.node, `/${username}-info`, this.info);
     }
 
@@ -176,10 +169,7 @@ class Node {
             timestamp: Date.now(),
         };
 
-        await this.node.pubsub.publish(
-            this.info.username,
-            new TextEncoder().encode(JSON.stringify(post))
-        );
+        await publishMessage(this.node, this.info.username, JSON.stringify(post));
 
         this.info.posts.push(post);
         this.info.timeline.push(post);

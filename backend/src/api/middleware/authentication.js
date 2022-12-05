@@ -1,4 +1,4 @@
-import {getContent} from "../../lib/dht.js";
+import {getContent} from "../../lib/peer-content.js";
 import node from "../../models/Node.js";
 import {StatusCodes} from "http-status-codes";
 import {comparePassword} from "../../lib/passwords.js";
