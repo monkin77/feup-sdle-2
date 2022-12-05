@@ -1,13 +1,13 @@
-import {createLibp2p} from "libp2p";
-import {tcp} from "@libp2p/tcp";
-import {noise} from "@chainsafe/libp2p-noise";
-import {mplex} from "@libp2p/mplex";
-import {bootstrap} from "@libp2p/bootstrap";
-import {pubsubPeerDiscovery} from "@libp2p/pubsub-peer-discovery";
-import {gossipsub} from "@chainsafe/libp2p-gossipsub";
-import {kadDHT} from "@libp2p/kad-dht";
-import {getContent, publishMessage, putContent} from "../lib/peer-content.js";
-import {parseBootstrapAddresses} from "../lib/parser.js";
+import { createLibp2p } from "libp2p";
+import { tcp } from "@libp2p/tcp";
+import { noise } from "@chainsafe/libp2p-noise";
+import { mplex } from "@libp2p/mplex";
+import { bootstrap } from "@libp2p/bootstrap";
+import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
+import { gossipsub } from "@chainsafe/libp2p-gossipsub";
+import { kadDHT } from "@libp2p/kad-dht";
+import { discoveryTopic, getContent, publishMessage, putContent } from "../lib/peer-content.js";
+import { parseBootstrapAddresses } from "../lib/parser.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -19,7 +19,7 @@ const getNodeOptions = () => {
         transports: [tcp()],
         connectionEncryption: [noise()],
         streamMuxers: [mplex()],
-        pubsub: gossipsub({allowPublishToZeroPeers: true, emitSelf: true}),
+        pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true }),
         peerDiscovery: [
             bootstrap({
                 interval: 60e3,
@@ -45,7 +45,7 @@ class Node {
      */
     subscribedTopics = [];
 
-    subscriptionHandler = (currSubscribedTopics) => async (evt) => {
+    subscriptionHandler = (currSubscribedTopics) => async(evt) => {
         currSubscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
@@ -112,7 +112,6 @@ class Node {
         const listenAddresses = this.node.getMultiaddrs();
         console.log("Listening on addresses: ", listenAddresses);
 
-        this.loggedIn = false;
         this.resetInfo();
 
         this.node.pubsub.addEventListener("message", this.subscriptionHandler(this.subscribedTopics));
@@ -147,11 +146,25 @@ class Node {
     }
 
     /**
-     * Function to logout of account. Stops the node and restarts it for a later login.
+     * Function to logout of account. 
+     * Clears all the node's data and logouts.
      */
     async logout() {
-        await this.stop();
-        await this.start();
+        this.unsubscribeAll();
+        this.resetInfo();
+    }
+
+    /**
+     * Function to unsubscribe from all the topics except the node's discovery topic. 
+     * The node keeps working without being authenticated.
+     */
+    unsubscribeAll() {
+        const topics = this.node.pubsub.getTopics();
+        topics.forEach(topic => {
+            if (topic !== discoveryTopic) {
+                this.node.pubsub.unsubscribe(topic);
+            }
+        });
     }
 
     /**
@@ -225,6 +238,8 @@ class Node {
             timeline: [],
             posts: [],
         };
+
+        this.loggedIn = false;
     }
 
     getNode() {
