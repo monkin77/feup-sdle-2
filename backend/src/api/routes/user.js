@@ -10,18 +10,9 @@ export default (app) => {
     
     router.get("/info", isLoggedIn, infoHandler);
     router.get("/:username/info", isLoggedIn, existingUser, isFollowing, infoHandler);
-    router.get("/:username/followers", existingUser, getFollowersHandler);
     router.post("/:username/follow", isLoggedIn, existingUser, canFollow, followHandler);
     router.post("/:username/unfollow", isLoggedIn, existingUser, isFollowing, unfollowHandler);
 };
-
-/**
- * Handles getting the followers of a user.
- */
-async function getFollowersHandler(req, res) {
-    const followers = await node.getFollowers(req.params.username);
-    res.json({followers});
-}
 
 /**
  * Handles the following of a new user.

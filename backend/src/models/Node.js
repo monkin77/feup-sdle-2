@@ -213,18 +213,6 @@ class Node {
     }
 
     /**
-     * Get the followers of a user.
-     * @param {*} username
-     * @returns List with the user's followers.
-     */
-    async getFollowers(/*username*/) {
-        throw new Error("Not implemented");
-        // TODO: not working because there is no putContent
-        //const data = await getContent(this.node, `/${username}-info`);
-        //return data.followers;
-    }
-
-    /**
      * Reset this node's information.
      */
     resetInfo() {
