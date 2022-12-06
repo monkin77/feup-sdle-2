@@ -153,9 +153,9 @@ class Node {
         try {
             // TODO: Return status of collection
             const collectStatus = await collectInfo(this, this.username);
-            console.log("Info found: ", this.info());
+            console.log("Recovered account info: ", this.info());
         } catch (e) {
-            console.log("User not found");
+            console.log("Account's info not found. Inserting new info");
             // If the user is not found, its info is created from scratch
             this.profiles[this.username] = new Info();
         }
