@@ -61,7 +61,7 @@ export const discoveryTopic = "_peer-discovery._p2p._pubsub";
  * @param {Libp2p} node 
  * @param {string} key 
  */
-export const provideInfo = async (peer, key) => {
+export const provideInfo = async(peer, key) => {
     const node = peer.node;
     const cid = await createCID(key);
 
@@ -94,14 +94,15 @@ export const unprovideInfo = async (peer, key) => {
  * @param {Libp2p} node 
  * @param {string} key 
  */
-export const collectInfo = async (peer, key) => {
+export const collectInfo = async(peer, key) => {
     const node = peer.node;
     const cid = await createCID(key);
 
     const providers = await all(node.contentRouting.findProviders(
-        cid,
-        { maxTimeout: 1000, maxNumProviders: 1 }
+        cid, { maxTimeout: 1000, maxNumProviders: 1 }
     ));
+    console.log("providers", providers);
+
     for (const provider of providers) {
         let info = await node.fetch(provider.id, `/${key}`);
         return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
@@ -109,9 +110,8 @@ export const collectInfo = async (peer, key) => {
     return {};
 };
 
-const createCID = async (content) => {
+const createCID = async(content) => {
     const bytes = new TextEncoder().encode(content);
     const hash = await sha256.digest(bytes);
     return CID.create(1, 0x55, hash);
 };
-

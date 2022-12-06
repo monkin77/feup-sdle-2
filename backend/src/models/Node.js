@@ -46,8 +46,8 @@ class Node {
      */
     subscribedTopics = [];
 
-    subscriptionHandler = () => async (evt) => {
-        singletonNode.subscribedTopics
+    subscriptionHandler = (currSubscribedTopics) => async(evt) => {
+        currSubscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
                 const data = new TextDecoder().decode(evt.detail.data);
@@ -148,7 +148,17 @@ class Node {
      */
     async login(username) {
         this.username = username;
-        this.profiles[this.username] = new Info();
+
+
+        try {
+            // TODO: Return status of collection
+            const collectStatus = await collectInfo(this, this.username);
+            console.log("Info found: ", this.info());
+        } catch (e) {
+            console.log("User not found");
+            // If the user is not found, its info is created from scratch
+            this.profiles[this.username] = new Info();
+        }
 
         this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.username}-follow`);
