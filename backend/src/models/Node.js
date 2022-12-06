@@ -6,7 +6,7 @@ import { bootstrap } from "@libp2p/bootstrap";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { kadDHT } from "@libp2p/kad-dht";
-import { discoveryTopic, getContent, publishMessage, putContent } from "../lib/peer-content.js";
+import { discoveryTopic, collectInfo, provideInfo, getContent, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 
 const getNodeOptions = () => {
@@ -128,7 +128,8 @@ class Node {
      */
     async register(username, password) {
         await putContent(this.node, `/${username}`, password);
-        await putContent(this.node, `/${username}-info`, this.info);
+        // TODO remove: await putContent(this.node, `/${username}-info`, this.info);
+        await provideInfo(this.node, `/${username}`);
     }
 
     /**
@@ -178,7 +179,10 @@ class Node {
         await publishMessage(this.node, `/${username}-follow`, this.username);
 
         this.info.following.add(username);
-        await putContent(this.node, `/${this.username}-info`, this.info);
+        // TODO remove:  await putContent(this.node, `/${this.username}-info`, this.info);
+        
+        await collectInfo(this.node, `/${username}`);
+        await provideInfo(this.node, `/${username}`);
     }
 
     /**
@@ -190,7 +194,8 @@ class Node {
         this.info.following.delete(username);
 
         await publishMessage(this.node, `/${username}-unfollow`, this.username);
-        await putContent(this.node, `/${this.username}-info`, this.info);
+        // TODO remove:  await putContent(this.node, `/${this.username}-info`, this.info);
+        // TODO: unprovideInfo(this.node, `/${username}`);
     }
 
     /**
@@ -209,7 +214,7 @@ class Node {
 
         this.info.timeline.push(post);
 
-        await putContent(this.node, `/${this.username}-info`, this.info);
+        // TODO remove: await putContent(this.node, `/${this.username}-info`, this.info);
 
         return post;
     }
@@ -220,6 +225,7 @@ class Node {
      * @returns List with the user's followers.
      */
     async getFollowers(username) {
+        // TODO: not working because there is no putContent
         const data = await getContent(this.node, `/${username}-info`);
         return data.followers;
     }

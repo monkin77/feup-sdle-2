@@ -49,3 +49,43 @@ export const publishMessage = async(node, topic, message) => {
 };
 
 export const discoveryTopic = "_peer-discovery._p2p._pubsub";
+
+/**
+ * Announce that this node provides the content correspondent to the key.
+ * Register the lookup function to be called when a peer wants to get the content.
+ * @param {Libp2p} node 
+ * @param {string} key 
+ */
+export const provideInfo = async (node, key) => {
+    // Node annouce that it has the content for the given key
+    await node.contentRouting.provide(
+        new TextEncoder().encode(key)
+    );
+
+    // Node register the retrieve function to be called when a peer request the content
+    node.fetchService.registerLookupFunction(`/${key}`, (_) => { 
+        if (key === node.username) {
+            return node.info;
+        } else if (node.profiles[key]) {
+            return node.profiles[key];
+        }
+        return {};
+     });
+};
+
+/**
+ * Find the peers that provide the content for the given key.
+ * Fetch the content from the first peer that provides it. // TODO: tweek this
+ * @param {Libp2p} node 
+ * @param {string} key 
+ */
+export const collectInfo = async (node, key) => {
+    const providers = await node.contentRouting.findProviders(
+        new TextEncoder().encode(key),
+        { maxTimeout: 1000, maxNumProviders: 1 }
+    );
+    for (const provider of providers) {
+        const info = await node.fetch(provider.id, `/${key}`);
+        node.profiles[key] = info;
+    }
+};
