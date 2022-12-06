@@ -102,7 +102,7 @@ class Node {
         });
 
         // we must also reset the handlers of the subscribed topics
-        this.subscribedTopics = [];
+        this.subscribedTopics.length = 0;
     }
 
     async start() {
