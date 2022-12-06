@@ -6,7 +6,7 @@ import { bootstrap } from "@libp2p/bootstrap";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { kadDHT } from "@libp2p/kad-dht";
-import { discoveryTopic, collectInfo, provideInfo, getContent, publishMessage, putContent } from "../lib/peer-content.js";
+import { discoveryTopic, collectInfo, provideInfo, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
 
@@ -168,28 +168,28 @@ class Node {
 
     /**
      * Subscribe to a user and set the callback function to be called when a new message is received.
-     * @param {*} username Username of the user to follow
+     * @param {*} followUsername Username of the user to follow
      */
-    async follow(username) {
-        this.node.pubsub.subscribe(`/${username}`);
+    async follow(followUsername) {
+        this.node.pubsub.subscribe(`/${followUsername}`);
 
-        await publishMessage(this.node, `/${username}-follow`, this.username);
+        await publishMessage(this.node, `/${followUsername}-follow`, this.username);
 
-        this.info().addFollowing(username);
+        this.info().addFollowing(followUsername);
 
-        await collectInfo(this, username);
-        await provideInfo(this, username);
+        await collectInfo(this, followUsername);
+        await provideInfo(this, followUsername);
     }
 
     /**
      * Unsubscribe from a user.
-     * @param {*} username
+     * @param {*} unfollowUsername
      */
-    async unfollow(username) {
-        this.node.pubsub.unsubscribe(`/${username}`);
-        this.info().removeFollowing(username);
+    async unfollow(unfollowUsername) {
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}`);
+        this.info().removeFollowing(unfollowUsername);
 
-        await publishMessage(this.node, `/${username}-unfollow`, this.username);
+        await publishMessage(this.node, `/${unfollowUsername}-unfollow`, this.username);
         // TODO: unprovideInfo(this.node, `/${username}`);
     }
 
@@ -217,7 +217,7 @@ class Node {
      * @param {*} username
      * @returns List with the user's followers.
      */
-    async getFollowers(username) {
+    async getFollowers(/*username*/) {
         throw new Error("Not implemented");
         // TODO: not working because there is no putContent
         //const data = await getContent(this.node, `/${username}-info`);

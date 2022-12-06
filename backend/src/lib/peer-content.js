@@ -69,10 +69,10 @@ export const provideInfo = async (peer, key) => {
     await node.contentRouting.provide(cid);
 
     // Node register the retrieve function to be called when a peer request the content
-    node.fetchService.registerLookupFunction(`/${key}`, (trash) => {
-        const info = peer.getInfo(key)
+    node.fetchService.registerLookupFunction(`/${key}`, () => {
+        const info = peer.getInfo(key);
         return new TextEncoder().encode(JSON.stringify(info));
-     });
+    });
 };
 
 /**
