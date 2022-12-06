@@ -1,7 +1,7 @@
 <script>
-	import LoginForm from "../lib/components/Auth/LoginForm.svelte";
+	import LoginPage from "../lib/pages/LoginPage.svelte";
 
     export let data;
 </script>
 
-<LoginForm registerAction={() => console.log("register")} />
+<LoginPage />
