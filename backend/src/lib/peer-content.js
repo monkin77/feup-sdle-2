@@ -91,9 +91,9 @@ export const collectInfo = async (peer, key) => {
     ));
     for (const provider of providers) {
         let info = await node.fetch(provider.id, `/${key}`);
-        info = JSON.parse(new TextDecoder().decode(info));
-        peer.setInfo(key, info); // TODO: merge infos instead of overwriting (?) 
+        return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
     }
+    return {};
 };
 
 const createCID = async (content) => {

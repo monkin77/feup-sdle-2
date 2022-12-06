@@ -177,7 +177,8 @@ class Node {
 
         this.info().addFollowing(followUsername);
 
-        await collectInfo(this, followUsername);
+        const followUserInfo = await collectInfo(this, followUsername);
+        this.setInfo(followUsername, followUserInfo);
         await provideInfo(this, followUsername);
     }
 
