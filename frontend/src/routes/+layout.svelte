@@ -2,4 +2,6 @@
     import "../app.css";
 </script>
 
-<slot />
+<main class="bg-slate-800 h-screen">
+    <slot />
+</main>
