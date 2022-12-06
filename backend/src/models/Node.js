@@ -46,8 +46,8 @@ class Node {
      */
     subscribedTopics = [];
 
-    subscriptionHandler = (currSubscribedTopics) => async (evt) => {
-        currSubscribedTopics
+    subscriptionHandler = () => async (evt) => {
+        singletonNode.subscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
                 const data = new TextDecoder().decode(evt.detail.data);
@@ -102,7 +102,7 @@ class Node {
         });
 
         // we must also reset the handlers of the subscribed topics
-        this.subscribedTopics.length = 0;
+        this.subscribedTopics = [];
     }
 
     async start() {
@@ -125,7 +125,7 @@ class Node {
 
         this.resetInfo();
 
-        this.node.pubsub.addEventListener("message", this.subscriptionHandler(this.subscribedTopics));
+        this.node.pubsub.addEventListener("message", this.subscriptionHandler());
     }
 
     async stop() {
