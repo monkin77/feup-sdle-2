@@ -92,7 +92,7 @@ export const collectInfo = async (peer, key) => {
     for (const provider of providers) {
         let info = await node.fetch(provider.id, `/${key}`);
         info = JSON.parse(new TextDecoder().decode(info));
-        node.setInfo(key, info); // TODO: merge infos instead of overwriting (?) 
+        peer.setInfo(key, info); // TODO: merge infos instead of overwriting (?) 
     }
 };
 

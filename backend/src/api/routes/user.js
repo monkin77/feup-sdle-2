@@ -46,7 +46,6 @@ async function unfollowHandler(req, res) {
  */
 async function infoHandler(req, res) {
     const username = req.params.username || node.username;
-    console.log(username);
     const info = node.getInfo(username);
     res.json(info);
 }

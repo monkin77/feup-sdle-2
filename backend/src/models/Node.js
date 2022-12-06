@@ -8,6 +8,7 @@ import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { kadDHT } from "@libp2p/kad-dht";
 import { discoveryTopic, collectInfo, provideInfo, getContent, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
+import { Info } from "../models/Info.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -57,10 +58,9 @@ class Node {
     subscribeTopics() {
         // New post from a followed user
         this.subscribeTopic(
-            topic => this.info.following.has(topic),
+            topic => this.info().hasFollowing(topic),
             async data => {
-                this.info.timeline.push(data);
-                await putContent(this.node, `/${this.username}-info`, this.info);
+                this.info().addPost(data);
             }
         );
 
@@ -68,9 +68,7 @@ class Node {
         this.subscribeTopic(
             `/${this.username}-follow`,
             async username => {
-                this.info.followers.add(username);
-                await putContent(this.node, `/${this.username}-info`, this.info);
-                console.log("New node's info", await getContent(this.node, `/${this.username}-info`));
+                this.info().addFollowers(username);
             }
         );
 
@@ -78,8 +76,7 @@ class Node {
         this.subscribeTopic(
             `/${this.username}-unfollow`,
             async username => {
-                this.info.followers.delete(username);
-                await putContent(this.node, `/${this.username}-info`, this.info);
+                this.info().removeFollowers(username);
             }
         );
     }
@@ -151,6 +148,7 @@ class Node {
      */
     async login(username) {
         this.username = username;
+        this.profiles[this.username] = new Info();
 
         this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.username}-follow`);
@@ -177,7 +175,7 @@ class Node {
 
         await publishMessage(this.node, `/${username}-follow`, this.username);
 
-        this.info.following.add(username);
+        this.info().addFollowing(username);
 
         await collectInfo(this, username);
         await provideInfo(this, username);
@@ -189,7 +187,7 @@ class Node {
      */
     async unfollow(username) {
         this.node.pubsub.unsubscribe(`/${username}`);
-        this.info.following.delete(username);
+        this.info().removeFollowing(username);
 
         await publishMessage(this.node, `/${username}-unfollow`, this.username);
         // TODO: unprovideInfo(this.node, `/${username}`);
@@ -209,7 +207,7 @@ class Node {
 
         await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
-        this.info.timeline.push(post);
+        this.info().addPost(post);
 
         return post;
     }
@@ -220,9 +218,10 @@ class Node {
      * @returns List with the user's followers.
      */
     async getFollowers(username) {
+        throw new Error("Not implemented");
         // TODO: not working because there is no putContent
-        const data = await getContent(this.node, `/${username}-info`);
-        return data.followers;
+        //const data = await getContent(this.node, `/${username}-info`);
+        //return data.followers;
     }
 
     /**
@@ -230,11 +229,6 @@ class Node {
      */
     resetInfo() {
         this.username = "";
-        this.info = {
-            followers: new Set(),
-            following: new Set(),
-            timeline: [],
-        };
         this.profiles = {};
     }
 
@@ -246,44 +240,31 @@ class Node {
         return this.username !== "";
     }
 
+    /**
+     * @param {string} username 
+     * @returns json with the user's information.
+     */
     getInfo(username) {
-        if (username === this.username) {
-            return this._infoToJSON(this.info);
-        }
-        if (this.profile[username]) {
-            return this._infoToJSON(this.profile[username]);
+        if (this.profiles[username]) {
+            return this.profiles[username].toJson();
         }
         return {};
     }
 
+    /**
+     * @param {string} username 
+     * @param {object} info Json object with the user's information.
+     */
     setInfo(username, info) {
-        if (username === this.username) {
-            this.info = this._jsonToInfo(info);
-        } else if (this.profiles[username]) {
-            this.profiles[username] =  this._jsonToInfo(info);
-        }
+        this.profiles[username] = new Info(info);
     }
 
     /**
-     * Followers and followig sets are converted to arrays.
+     * Alias fot this.profiles[this.username]
+     * @returns Logged in user's info.
      */
-    _infoToJSON(info) {
-        return {
-            followers: Array.from(info.followers),
-            following: Array.from(info.following),
-            timeline: info.timeline,
-        };
-    }
-
-    /**
-     * Followers and followig arrays are converted to sets.
-     */
-    _jsonToInfo(info) {
-        return {
-            followers: new Set(info.followers),
-            following: new Set(info.following),
-            timeline: info.timeline,
-        };
+    info() {
+        return this.profiles[this.username];
     }
 }
 
