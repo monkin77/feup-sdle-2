@@ -1,13 +1,13 @@
-import {createLibp2p} from "libp2p";
-import {tcp} from "@libp2p/tcp";
-import {noise} from "@chainsafe/libp2p-noise";
-import {mplex} from "@libp2p/mplex";
-import {bootstrap} from "@libp2p/bootstrap";
-import {pubsubPeerDiscovery} from "@libp2p/pubsub-peer-discovery";
-import {gossipsub} from "@chainsafe/libp2p-gossipsub";
-import {kadDHT} from "@libp2p/kad-dht";
-import {getContent, publishMessage, putContent} from "../lib/peer-content.js";
-import {parseBootstrapAddresses} from "../lib/parser.js";
+import { createLibp2p } from "libp2p";
+import { tcp } from "@libp2p/tcp";
+import { noise } from "@chainsafe/libp2p-noise";
+import { mplex } from "@libp2p/mplex";
+import { bootstrap } from "@libp2p/bootstrap";
+import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
+import { gossipsub } from "@chainsafe/libp2p-gossipsub";
+import { kadDHT } from "@libp2p/kad-dht";
+import { discoveryTopic, getContent, publishMessage, putContent } from "../lib/peer-content.js";
+import { parseBootstrapAddresses } from "../lib/parser.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -19,7 +19,7 @@ const getNodeOptions = () => {
         transports: [tcp()],
         connectionEncryption: [noise()],
         streamMuxers: [mplex()],
-        pubsub: gossipsub({allowPublishToZeroPeers: true, emitSelf: true}),
+        pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true }),
         peerDiscovery: [
             bootstrap({
                 interval: 60e3,
@@ -45,11 +45,12 @@ class Node {
      */
     subscribedTopics = [];
 
-    subscriptionHandler = (currSubscribedTopics) => async (evt) => {
+    subscriptionHandler = (currSubscribedTopics) => async(evt) => {
         currSubscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
-                const data = JSON.parse(new TextDecoder().decode(evt.detail.data));
+                const data = new TextDecoder().decode(evt.detail.data);
+                console.log("Decoded message: ", data);
                 topic.action(data, evt);
             });
     };
@@ -70,6 +71,7 @@ class Node {
             async username => {
                 this.info.followers.push(username);
                 await putContent(this.node, `/${this.info.username}-info`, this.info);
+                console.log("New node's info", await getContent(this.node, `/${this.info.username}-info`));
             }
         );
 
@@ -112,11 +114,9 @@ class Node {
         const listenAddresses = this.node.getMultiaddrs();
         console.log("Listening on addresses: ", listenAddresses);
 
-        this.loggedIn = false;
         this.resetInfo();
 
         this.node.pubsub.addEventListener("message", this.subscriptionHandler(this.subscribedTopics));
-        this.subscribeTopics();
     }
 
     async stop() {
@@ -142,16 +142,34 @@ class Node {
         this.info.username = username;
         this.loggedIn = true;
 
+        this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.info.username}-follow`);
         this.node.pubsub.subscribe(`/${this.info.username}-unfollow`);
     }
 
     /**
-     * Function to logout of account. Stops the node and restarts it for a later login.
+     * Function to logout of account. 
+     * Clears all the node's data and logouts.
      */
     async logout() {
-        await this.stop();
-        await this.start();
+        this.unsubscribeAll();
+        this.resetInfo();
+    }
+
+    /**
+     * Function to unsubscribe from all the topics except the node's discovery topic. 
+     * The node keeps working without being authenticated.
+     */
+    unsubscribeAll() {
+        const topics = this.node.pubsub.getTopics();
+        topics.forEach(topic => {
+            if (topic !== discoveryTopic) {
+                this.node.pubsub.unsubscribe(topic);
+            }
+        });
+
+        // we must also reset the handlers of the subscribed topics
+        this.subscribedTopics = [];
     }
 
     /**
@@ -164,7 +182,7 @@ class Node {
         await publishMessage(this.node, `/${username}-follow`, this.info.username);
 
         this.info.following.push(username);
-        await putContent(this.node, `/${username}-info`, this.info);
+        await putContent(this.node, `/${this.info.username}-info`, this.info);
     }
 
     /**
@@ -179,7 +197,7 @@ class Node {
         );
 
         await publishMessage(this.node, `/${username}-unfollow`, this.info.username);
-        await putContent(this.node, `/${username}-info`, this.info);
+        await putContent(this.node, `/${this.info.username}-info`, this.info);
     }
 
     /**
@@ -225,6 +243,8 @@ class Node {
             timeline: [],
             posts: [],
         };
+
+        this.loggedIn = false;
     }
 
     getNode() {

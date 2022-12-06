@@ -6,7 +6,7 @@
  * @param {*} key
  * @returns content if success, throws error otherwise
  */
-export const getContent = async (node, key) => {
+export const getContent = async(node, key) => {
     const content = await node.contentRouting.get(
         new TextEncoder().encode(key)
     );
@@ -20,7 +20,7 @@ export const getContent = async (node, key) => {
  * @param {string} key
  * @param {*} value
  */
-export const putContent = async (node, key, value) => {
+export const putContent = async(node, key, value) => {
     try {
         await node.contentRouting.put(
             new TextEncoder().encode(key),
@@ -41,9 +41,11 @@ export const putContent = async (node, key, value) => {
  * @param {string} topic
  * @param {string} message
  */
-export const publishMessage = async (node, topic, message) => {
+export const publishMessage = async(node, topic, message) => {
     await node.pubsub.publish(
         topic,
         new TextEncoder().encode(message)
     );
 };
+
+export const discoveryTopic = "_peer-discovery._p2p._pubsub";
