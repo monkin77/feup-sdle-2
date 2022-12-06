@@ -1,7 +1,7 @@
 import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import all from "it-all";
-
+import peer from "../models/Node.js";
 
 /**
  * Get the content from the DHT
@@ -61,7 +61,7 @@ export const discoveryTopic = "_peer-discovery._p2p._pubsub";
  * @param {Libp2p} node 
  * @param {string} key 
  */
-export const provideInfo = async(peer, key) => {
+export const provideInfo = async(key) => {
     const node = peer.node;
     const cid = await createCID(key);
 
@@ -81,9 +81,10 @@ export const provideInfo = async(peer, key) => {
  * @param {Libp2p} peer 
  * @param {string} key 
  */
-export const unprovideInfo = async (peer, key) => {
+export const unprovideInfo = async(key) => {
     const node = peer.node;
-    
+
+    // TODO: Check if we don't need anything else to unprovide
     // Theres is no unprovide so it continues providing but unregister the providing callback
     node.fetchService.unregisterLookupFunction(`/${key}`);
 };
@@ -93,22 +94,44 @@ export const unprovideInfo = async (peer, key) => {
  * Fetch the content from the first peer that provides it. // TODO: tweek this
  * @param {Libp2p} node 
  * @param {string} key 
+ * @returns {object} Dictionary with the content if found, null otherwise.
  */
-export const collectInfo = async(peer, key) => {
+export const collectInfo = async(key) => {
     const node = peer.node;
-    const cid = await createCID(key);
 
-    const providers = await all(node.contentRouting.findProviders(
-        cid, { maxTimeout: 1000, maxNumProviders: 1 }
-    ));
-    console.log("providers", providers);
+    const providers = await getPeerProviders(key);
+    if (providers.length === 0) {
+        return null;
+    }
 
+    // TODO: Check how info will be updated from the providers
     for (const provider of providers) {
         let info = await node.fetch(provider.id, `/${key}`);
         return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
     }
-    return {};
+
+    return null;
 };
+
+/**
+ * Gets the peers that provide the content for the given key.
+ * @param {*} key 
+ * @returns List of peers that provide the content. If no peers are found, returns an empty list.
+ */
+export const getPeerProviders = async(key) => {
+    const cid = await createCID(key);
+
+    let providers = [];
+    try {
+        providers = await all(peer.node.contentRouting.findProviders(
+            cid, { maxTimeout: 1000, maxNumProviders: 1 }
+        ));
+    } catch (err) { /* empty */ }
+
+    // console.log("providers:", providers);
+    return providers;
+};
+
 
 const createCID = async(content) => {
     const bytes = new TextEncoder().encode(content);

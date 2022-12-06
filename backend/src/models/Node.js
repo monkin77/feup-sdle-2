@@ -140,6 +140,7 @@ class Node {
      */
     async register(username, password) {
         await putContent(this.node, `/${username}`, password);
+
     }
 
     /**
@@ -148,13 +149,10 @@ class Node {
      */
     async login(username) {
         this.username = username;
-
-
-        try {
-            // TODO: Return status of collection
-            const collectStatus = await collectInfo(this, this.username);
+        const collectStatus = await collectInfo(this.username);
+        if (collectStatus)
             console.log("Recovered account info: ", this.info());
-        } catch (e) {
+        else {
             console.log("Account's info not found. Inserting new info");
             // If the user is not found, its info is created from scratch
             this.profiles[this.username] = new Info();
@@ -164,7 +162,7 @@ class Node {
         this.node.pubsub.subscribe(`/${this.username}-follow`);
         this.node.pubsub.subscribe(`/${this.username}-unfollow`);
 
-        await provideInfo(this, this.username);
+        await provideInfo(this.username);
     }
 
     /**
@@ -187,9 +185,12 @@ class Node {
 
         this.info().addFollowing(followUsername);
 
+        // TODO: This should be done first and if not succesful, the follow request should fail?
         const followUserInfo = await collectInfo(this, followUsername);
-        this.setInfo(followUsername, followUserInfo);
-        await provideInfo(this, followUsername);
+        if (followUserInfo != null) {
+            this.setInfo(followUsername, followUserInfo);
+            await provideInfo(followUsername);
+        }
     }
 
     /**
@@ -201,7 +202,11 @@ class Node {
         this.info().removeFollowing(unfollowUsername);
 
         await publishMessage(this.node, `/${unfollowUsername}-unfollow`, this.username);
+<<<<<<< HEAD
         unprovideInfo(this.node, unfollowUsername);
+=======
+        // TODO: unprovideInfo(`/${username}`);
+>>>>>>> 06d8af1 (Add middleware to check if there is any active provider for an user)
     }
 
     /**

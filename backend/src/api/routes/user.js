@@ -1,16 +1,16 @@
 import node from "../../models/Node.js";
-import {Router} from "express";
-import {isLoggedIn} from "../middleware/authentication.js";
-import {canFollow, existingUser, isFollowing} from "../middleware/user.js";
+import { Router } from "express";
+import { isLoggedIn } from "../middleware/authentication.js";
+import { canFollow, existingUser, hasProvider, isFollowing } from "../middleware/user.js";
 import { collectInfo } from "../../lib/peer-content.js";
 
 const router = Router();
 
 export default (app) => {
     app.use("/users", router);
-    
+
     router.get("/:username/info", isLoggedIn, existingUser, infoHandler);
-    router.post("/:username/follow", isLoggedIn, existingUser, canFollow, followHandler);
+    router.post("/:username/follow", isLoggedIn, existingUser, canFollow, hasProvider, followHandler);
     router.post("/:username/unfollow", isLoggedIn, existingUser, isFollowing, unfollowHandler);
 };
 
@@ -37,9 +37,11 @@ async function unfollowHandler(req, res) {
  */
 async function infoHandler(req, res) {
     const username = req.params.username;
-    const info = username === node.username || node.info().hasFollowing(username)
-        ? node.getInfo(username)
-        : await collectInfo(node, username);
-        
+    let info = username === node.username || node.info().hasFollowing(username) ?
+        node.getInfo(username) :
+        await collectInfo(node, username);
+
+    if (info == null) info = {};
+
     res.json(info);
 }
