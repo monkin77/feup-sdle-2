@@ -11,7 +11,7 @@ export default (app) => {
 
     router.get("/:username/info", isLoggedIn, existingUser, infoHandler);
     router.post("/:username/follow", isLoggedIn, existingUser, canFollow, hasProvider, followHandler);
-    router.post("/:username/unfollow", isLoggedIn, existingUser, isFollowing, unfollowHandler);
+    router.post("/:username/unfollow", isLoggedIn, existingUser, isFollowing, hasProvider, unfollowHandler);
 };
 
 /**

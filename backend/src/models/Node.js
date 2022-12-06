@@ -46,8 +46,8 @@ class Node {
      */
     subscribedTopics = [];
 
-    subscriptionHandler = (currSubscribedTopics) => async(evt) => {
-        currSubscribedTopics
+    subscriptionHandler = () => async(evt) => {
+        singletonNode.subscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
                 const data = new TextDecoder().decode(evt.detail.data);

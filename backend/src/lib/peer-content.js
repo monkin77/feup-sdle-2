@@ -69,10 +69,14 @@ export const provideInfo = async(key) => {
     await node.contentRouting.provide(cid);
 
     // Node register the retrieve function to be called when a peer request the content
-    node.fetchService.registerLookupFunction(`/${key}`, () => {
-        const info = peer.getInfo(key);
-        return new TextEncoder().encode(JSON.stringify(info));
-    });
+    try {
+        node.fetchService.registerLookupFunction(`/${key}`, () => {
+            const info = peer.getInfo(key);
+            return new TextEncoder().encode(JSON.stringify(info));
+        });
+    } catch (err) {
+        console.log(`Error registering lookup function for ${key}: ${err}`);
+    }
 };
 
 /**
@@ -106,8 +110,12 @@ export const collectInfo = async(key) => {
 
     // TODO: Check how info will be updated from the providers
     for (const provider of providers) {
-        let info = await node.fetch(provider.id, `/${key}`);
-        return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
+        try {
+            let info = await node.fetch(provider.id, `/${key}`);
+            return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
+        } catch (err) {
+            console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
+        }
     }
 
     return null;
@@ -122,9 +130,10 @@ export const getPeerProviders = async(key) => {
     const cid = await createCID(key);
 
     let providers = [];
+    // TODO: Providers list should not include own node?
     try {
         providers = await all(peer.node.contentRouting.findProviders(
-            cid, { maxTimeout: 1000, maxNumProviders: 1 }
+            cid, { maxTimeout: 1000, maxNumProviders: 4 } // TODO: Check maxNumProviders
         ));
     } catch (err) { /* empty */ }
 
