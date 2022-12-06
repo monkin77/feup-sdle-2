@@ -1,11 +1,6 @@
-import * as dotenv from "dotenv";
-
-// TODO: move this into config file
-dotenv.config();
-const BACKEND_URL = process.env.BACKEND_URL;
+import { PUBLIC_BACKEND_URL } from '$env/static/public'
 
 export async function load({ fetch }) {
-    return await fetch(BACKEND_URL).then(r => r.json());
+    return await fetch(PUBLIC_BACKEND_URL).then(r => r.json());
 }
 
-export const csr = false; // deactivate client side rendering
