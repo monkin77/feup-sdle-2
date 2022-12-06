@@ -167,6 +167,9 @@ class Node {
                 this.node.pubsub.unsubscribe(topic);
             }
         });
+
+        // we must also reset the handlers of the subscribed topics
+        this.subscribedTopics = [];
     }
 
     /**
