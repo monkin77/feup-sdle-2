@@ -1,3 +1,8 @@
+import { CID } from "multiformats/cid";
+import { sha256 } from "multiformats/hashes/sha2";
+import all from "it-all";
+
+
 /**
  * Get the content from the DHT
  * Catches the error of no peers in routing table
@@ -56,20 +61,17 @@ export const discoveryTopic = "_peer-discovery._p2p._pubsub";
  * @param {Libp2p} node 
  * @param {string} key 
  */
-export const provideInfo = async (node, key) => {
+export const provideInfo = async (peer, key) => {
+    const node = peer.node;
+    const cid = await createCID(key);
+
     // Node annouce that it has the content for the given key
-    await node.contentRouting.provide(
-        new TextEncoder().encode(key)
-    );
+    await node.contentRouting.provide(cid);
 
     // Node register the retrieve function to be called when a peer request the content
-    node.fetchService.registerLookupFunction(`/${key}`, (_) => { 
-        if (key === node.username) {
-            return node.info;
-        } else if (node.profiles[key]) {
-            return node.profiles[key];
-        }
-        return {};
+    node.fetchService.registerLookupFunction(`/${key}`, (trash) => {
+        const info = peer.getInfo(key)
+        return new TextEncoder().encode(JSON.stringify(info));
      });
 };
 
@@ -79,13 +81,24 @@ export const provideInfo = async (node, key) => {
  * @param {Libp2p} node 
  * @param {string} key 
  */
-export const collectInfo = async (node, key) => {
-    const providers = await node.contentRouting.findProviders(
-        new TextEncoder().encode(key),
+export const collectInfo = async (peer, key) => {
+    const node = peer.node;
+    const cid = await createCID(key);
+
+    const providers = await all(node.contentRouting.findProviders(
+        cid,
         { maxTimeout: 1000, maxNumProviders: 1 }
-    );
+    ));
     for (const provider of providers) {
-        const info = await node.fetch(provider.id, `/${key}`);
-        node.profiles[key] = info;
+        let info = await node.fetch(provider.id, `/${key}`);
+        info = JSON.parse(new TextDecoder().decode(info));
+        node.setInfo(key, info); // TODO: merge infos instead of overwriting (?) 
     }
 };
+
+const createCID = async (content) => {
+    const bytes = new TextEncoder().encode(content);
+    const hash = await sha256.digest(bytes);
+    return CID.create(1, 0x55, hash);
+};
+

@@ -45,12 +45,11 @@ class Node {
      */
     subscribedTopics = [];
 
-    subscriptionHandler = (currSubscribedTopics) => async(evt) => {
+    subscriptionHandler = (currSubscribedTopics) => async (evt) => {
         currSubscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
                 const data = new TextDecoder().decode(evt.detail.data);
-                console.log("Decoded message: ", data);
                 topic.action(data, evt);
             });
     };
@@ -93,6 +92,22 @@ class Node {
         });
     }
 
+    /**
+     * Function to unsubscribe from all the topics except the node's discovery topic. 
+     * The node keeps working without being authenticated.
+     */
+    unsubscribeAll() {
+        const topics = this.node.pubsub.getTopics();
+        topics.forEach(topic => {
+            if (topic !== discoveryTopic) {
+                this.node.pubsub.unsubscribe(topic);
+            }
+        });
+
+        // we must also reset the handlers of the subscribed topics
+        this.subscribedTopics = [];
+    }
+
     async start() {
         const nodeOptions = getNodeOptions();
         this.node = await createLibp2p(nodeOptions);
@@ -128,8 +143,6 @@ class Node {
      */
     async register(username, password) {
         await putContent(this.node, `/${username}`, password);
-        // TODO remove: await putContent(this.node, `/${username}-info`, this.info);
-        await provideInfo(this.node, `/${username}`);
     }
 
     /**
@@ -142,6 +155,8 @@ class Node {
         this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.username}-follow`);
         this.node.pubsub.subscribe(`/${this.username}-unfollow`);
+
+        await provideInfo(this, this.username);
     }
 
     /**
@@ -154,22 +169,6 @@ class Node {
     }
 
     /**
-     * Function to unsubscribe from all the topics except the node's discovery topic. 
-     * The node keeps working without being authenticated.
-     */
-    unsubscribeAll() {
-        const topics = this.node.pubsub.getTopics();
-        topics.forEach(topic => {
-            if (topic !== discoveryTopic) {
-                this.node.pubsub.unsubscribe(topic);
-            }
-        });
-
-        // we must also reset the handlers of the subscribed topics
-        this.subscribedTopics = [];
-    }
-
-    /**
      * Subscribe to a user and set the callback function to be called when a new message is received.
      * @param {*} username Username of the user to follow
      */
@@ -179,10 +178,9 @@ class Node {
         await publishMessage(this.node, `/${username}-follow`, this.username);
 
         this.info.following.add(username);
-        // TODO remove:  await putContent(this.node, `/${this.username}-info`, this.info);
-        
-        await collectInfo(this.node, `/${username}`);
-        await provideInfo(this.node, `/${username}`);
+
+        await collectInfo(this, username);
+        await provideInfo(this, username);
     }
 
     /**
@@ -194,7 +192,6 @@ class Node {
         this.info.following.delete(username);
 
         await publishMessage(this.node, `/${username}-unfollow`, this.username);
-        // TODO remove:  await putContent(this.node, `/${this.username}-info`, this.info);
         // TODO: unprovideInfo(this.node, `/${username}`);
     }
 
@@ -214,8 +211,6 @@ class Node {
 
         this.info.timeline.push(post);
 
-        // TODO remove: await putContent(this.node, `/${this.username}-info`, this.info);
-
         return post;
     }
 
@@ -234,14 +229,13 @@ class Node {
      * Reset this node's information.
      */
     resetInfo() {
-        this.username = "",
+        this.username = "";
         this.info = {
             followers: new Set(),
             following: new Set(),
             timeline: [],
         };
-
-        this.loggedIn = false;
+        this.profiles = {};
     }
 
     getNode() {
@@ -262,10 +256,32 @@ class Node {
         return {};
     }
 
+    setInfo(username, info) {
+        if (username === this.username) {
+            this.info = this._jsonToInfo(info);
+        } else if (this.profiles[username]) {
+            this.profiles[username] =  this._jsonToInfo(info);
+        }
+    }
+
+    /**
+     * Followers and followig sets are converted to arrays.
+     */
     _infoToJSON(info) {
         return {
             followers: Array.from(info.followers),
             following: Array.from(info.following),
+            timeline: info.timeline,
+        };
+    }
+
+    /**
+     * Followers and followig arrays are converted to sets.
+     */
+    _jsonToInfo(info) {
+        return {
+            followers: new Set(info.followers),
+            following: new Set(info.following),
             timeline: info.timeline,
         };
     }
