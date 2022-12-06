@@ -8,7 +8,7 @@
 <form>
     <slot />
     <div class="flex items-center justify-around">
-        <button class="bg-indigo-600 hover:bg-indigo-900 text-white font-bold py-2 px-4 rounded" type="button" on:click={action}>
+        <button class="bg-indigo-600 hover:bg-indigo-900 text-white font-bold py-2 px-4 rounded" type="submit" on:click={action}>
             {buttonText}
         </button>
 
