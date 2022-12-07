@@ -1,6 +1,6 @@
 import node from "../../models/Node.js";
 import { StatusCodes } from "http-status-codes";
-import { getContent, getPeerProviders } from "../../lib/peer-content.js";
+import { getContent } from "../../lib/peer-content.js";
 
 /**
  * Verifies if the user can follow another.
@@ -47,21 +47,6 @@ export const existingUser = async(req, res, next) => {
         return next({
             status: StatusCodes.NOT_FOUND,
             error: "User does not exist",
-        });
-    }
-
-    return next();
-};
-
-/**
- * Verifies if the user has any active provider.
- */
-export const hasProvider = async(req, res, next) => {
-    const providers = await getPeerProviders(req.params.username);
-    if (providers.length == 0) {
-        return next({
-            status: StatusCodes.NOT_FOUND,
-            error: "User does not have any providers",
         });
     }
 

@@ -75,7 +75,7 @@ export const provideInfo = async(key) => {
             return new TextEncoder().encode(JSON.stringify(info));
         });
     } catch (err) {
-        console.log(`Error registering lookup function for ${key}: ${err}`);
+        console.log(`Error registering the lookup function for ${key}: ${err}`);
     }
 };
 
@@ -90,7 +90,11 @@ export const unprovideInfo = async(key) => {
 
     // TODO: Check if we don't need anything else to unprovide
     // Theres is no unprovide so it continues providing but unregister the providing callback
-    node.fetchService.unregisterLookupFunction(`/${key}`);
+    try {
+        node.fetchService.unregisterLookupFunction(`/${key}`);
+    } catch (err) {
+        console.log(`Error unregistering the lookup function for ${key}: ${err}`);
+    }
 };
 
 /**
@@ -124,7 +128,7 @@ export const collectInfo = async(key) => {
 /**
  * Gets the peers that provide the content for the given key.
  * @param {*} key 
- * @returns List of peers that provide the content. If no peers are found, returns an empty list.
+ * @returns List of peers that provide the content excluding itself. If no peers are found, returns an empty list.
  */
 export const getPeerProviders = async(key) => {
     const cid = await createCID(key);
@@ -133,9 +137,12 @@ export const getPeerProviders = async(key) => {
     // TODO: Providers list should not include own node?
     try {
         providers = await all(peer.node.contentRouting.findProviders(
-            cid, { maxTimeout: 1000, maxNumProviders: 4 } // TODO: Check maxNumProviders
+            cid, { maxTimeout: 1000, maxNumProviders: 10 } // TODO: Check maxNumProviders
         ));
     } catch (err) { /* empty */ }
+
+    // Remove own node from the list
+    providers = providers.filter(provider => !peer.node.peerId.equals(provider.id));
 
     // console.log("providers:", providers);
     return providers;

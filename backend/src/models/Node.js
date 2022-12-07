@@ -179,18 +179,18 @@ class Node {
      * @param {*} followUsername Username of the user to follow
      */
     async follow(followUsername) {
+        const followUserInfo = await collectInfo(followUsername);
+        if (followUserInfo == null) return false;
+
+        this.setInfo(followUsername, followUserInfo);
+        await provideInfo(followUsername);
+
         this.node.pubsub.subscribe(`/${followUsername}`);
 
         await publishMessage(this.node, `/${followUsername}-follow`, this.username);
 
         this.info().addFollowing(followUsername);
-
-        // TODO: This should be done first and if not succesful, the follow request should fail?
-        const followUserInfo = await collectInfo(this, followUsername);
-        if (followUserInfo != null) {
-            this.setInfo(followUsername, followUserInfo);
-            await provideInfo(followUsername);
-        }
+        return true;
     }
 
     /**
@@ -199,14 +199,14 @@ class Node {
      */
     async unfollow(unfollowUsername) {
         this.node.pubsub.unsubscribe(`/${unfollowUsername}`);
+
         this.info().removeFollowing(unfollowUsername);
+        // TODO: Is this necessary?
+        this.setInfo(unfollowUsername, null); // Clear the info of the unfollowed user
 
         await publishMessage(this.node, `/${unfollowUsername}-unfollow`, this.username);
-<<<<<<< HEAD
+
         unprovideInfo(this.node, unfollowUsername);
-=======
-        // TODO: unprovideInfo(`/${username}`);
->>>>>>> 06d8af1 (Add middleware to check if there is any active provider for an user)
     }
 
     /**
