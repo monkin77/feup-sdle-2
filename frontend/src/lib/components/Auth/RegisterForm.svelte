@@ -23,7 +23,7 @@
 </script>
 
 <AuthModal>
-    <h2 class="text-2xl font-bold mb-4">Register</h2>
+    <h2 class="text-2xl text-gray-900 font-bold mb-4">Register</h2>
     <Form buttonText="Register" action={register} secondaryText="Sign in" {secondaryAction}>
         <FormField id="username" label="Username" type="text" placeholder="Username" bind:value={data.username} />
         <FormField id="password" label="Password" type="password" placeholder="***********" bind:value={data.password} />
