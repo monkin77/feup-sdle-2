@@ -7,12 +7,12 @@ import {getContent} from "../../lib/peer-content.js";
  */
 export const canFollow = async (req, res, next) => {
     const username = req.params.username;
-    if (username === node.info.username) {
+    if (username === node.username) {
         return next({
             status: StatusCodes.CONFLICT,
             error: "You cannot follow yourself",
         });
-    } else if (node.info.following.includes(username)) {
+    } else if (node.info().hasFollowing(username)) {
         return next({
             status: StatusCodes.CONFLICT,
             error: `You're already following ${username}`,
@@ -27,7 +27,7 @@ export const canFollow = async (req, res, next) => {
  */
 export const isFollowing = async (req, res, next) => {
     const username = req.params.username;
-    if (!node.info.following.includes(username)) {
+    if (!node.info().hasFollowing(username)) {
         return next({
             status: StatusCodes.CONFLICT,
             error: `You're not following ${username}`,

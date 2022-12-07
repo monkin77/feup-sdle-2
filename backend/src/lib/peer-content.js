@@ -1,3 +1,8 @@
+import { CID } from "multiformats/cid";
+import { sha256 } from "multiformats/hashes/sha2";
+import all from "it-all";
+
+
 /**
  * Get the content from the DHT
  * Catches the error of no peers in routing table
@@ -49,3 +54,51 @@ export const publishMessage = async(node, topic, message) => {
 };
 
 export const discoveryTopic = "_peer-discovery._p2p._pubsub";
+
+/**
+ * Announce that this node provides the content correspondent to the key.
+ * Register the lookup function to be called when a peer wants to get the content.
+ * @param {Libp2p} node 
+ * @param {string} key 
+ */
+export const provideInfo = async (peer, key) => {
+    const node = peer.node;
+    const cid = await createCID(key);
+
+    // Node annouce that it has the content for the given key
+    await node.contentRouting.provide(cid);
+
+    // Node register the retrieve function to be called when a peer request the content
+    node.fetchService.registerLookupFunction(`/${key}`, () => {
+        const info = peer.getInfo(key);
+        return new TextEncoder().encode(JSON.stringify(info));
+    });
+};
+
+/**
+ * Find the peers that provide the content for the given key.
+ * Fetch the content from the first peer that provides it. // TODO: tweek this
+ * @param {Libp2p} node 
+ * @param {string} key 
+ */
+export const collectInfo = async (peer, key) => {
+    const node = peer.node;
+    const cid = await createCID(key);
+
+    const providers = await all(node.contentRouting.findProviders(
+        cid,
+        { maxTimeout: 1000, maxNumProviders: 1 }
+    ));
+    for (const provider of providers) {
+        let info = await node.fetch(provider.id, `/${key}`);
+        return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
+    }
+    return {};
+};
+
+const createCID = async (content) => {
+    const bytes = new TextEncoder().encode(content);
+    const hash = await sha256.digest(bytes);
+    return CID.create(1, 0x55, hash);
+};
+
