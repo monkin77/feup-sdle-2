@@ -58,25 +58,61 @@ class Node {
     subscribeTopics() {
         // New post from a followed user
         this.subscribeTopic(
-            topic => this.info().hasFollowing(topic),
-            async data => {
-                this.info().addPost(data);
+            topic => this.info().hasFollowing(topic.substring(1)),
+            async (data, evt) => {
+                this.profiles[evt.detail.topic.substring(1)].addPost(JSON.parse(data));
             }
         );
 
         // New follower
         this.subscribeTopic(
-            `/${this.username}-follow`,
-            async username => {
-                this.info().addFollowers(username);
+            topic => {
+                const username = topic.substring(1, topic.length - "-wasFollowed".length);
+                return username === this.username || this.info().hasFollowing(username);
+            },
+            async (followerUsername, evt) => {
+                const topic = evt.detail.topic;
+                const username = topic.substring(1, topic.length - "-wasFollowed".length);
+                this.profiles[username].addFollowers(followerUsername);
+            }
+        );
+        
+        // New following
+        this.subscribeTopic(
+            topic => {
+                const username = topic.substring(1, topic.length - "-followed".length);
+                return username === this.username || this.info().hasFollowing(username);
+            },
+            async (followingUsername, evt) => {
+                const topic = evt.detail.topic;
+                const username = topic.substring(1, topic.length - "-followed".length);
+                this.profiles[username].addFollowing(followingUsername);
             }
         );
 
-        // Unfollowed
+        // New unfollower
         this.subscribeTopic(
-            `/${this.username}-unfollow`,
-            async username => {
-                this.info().removeFollowers(username);
+            topic => {
+                const username = topic.substring(1, topic.length - "-wasUnfollowed".length);
+                return username === this.username || this.info().hasFollowing(username);
+            },
+            async (unfollowerUsername, evt) => {
+                const topic = evt.detail.topic;
+                const username = topic.substring(1, topic.length - "-wasUnfollowed".length);
+                this.profiles[username].removeFollowers(unfollowerUsername);
+            }
+        );
+
+        // New unfollowing
+        this.subscribeTopic(
+            topic => {
+                const username = topic.substring(1, topic.length - "-unfollowed".length);
+                return username === this.username || this.info().hasFollowing(username);
+            },
+            async (unfollowingUsername, evt) => {
+                const topic = evt.detail.topic;
+                const username = topic.substring(1, topic.length - "-unfollowed".length);
+                this.profiles[username].removeFollowing(unfollowingUsername);
             }
         );
     }
@@ -160,8 +196,8 @@ class Node {
         }
 
         this.subscribeTopics();
-        this.node.pubsub.subscribe(`/${this.username}-follow`);
-        this.node.pubsub.subscribe(`/${this.username}-unfollow`);
+        this.node.pubsub.subscribe(`/${this.username}-wasFollowed`);
+        this.node.pubsub.subscribe(`/${this.username}-wasUnfollowed`);
 
         await provideInfo(this.username);
 
@@ -193,19 +229,21 @@ class Node {
      */
     async follow(followUsername) {
         const followUserInfo = await collectInfo(followUsername);
-        console.log("Follow user info: ", followUserInfo);
         if (followUserInfo == null) return false;
 
         this.setInfo(followUsername, followUserInfo);
         this.info().addFollowing(followUsername);
-        console.log("Info:", this.info());
-        console.log("Profiles:", this.profiles);
 
         await provideInfo(followUsername);
 
         this.node.pubsub.subscribe(`/${followUsername}`);
+        this.node.pubsub.subscribe(`/${followUsername}-wasFollowed`);
+        this.node.pubsub.subscribe(`/${followUsername}-wasUnfollowed`);
+        this.node.pubsub.subscribe(`/${followUsername}-followed`);
+        this.node.pubsub.subscribe(`/${followUsername}-unfollowed`);
 
-        await publishMessage(this.node, `/${followUsername}-follow`, this.username);
+        await publishMessage(this.node, `/${followUsername}-wasFollowed`, this.username);
+        await publishMessage(this.node, `/${this.username}-followed`, followUsername);
 
         return true;
     }
@@ -216,13 +254,18 @@ class Node {
      */
     async unfollow(unfollowUsername) {
         this.node.pubsub.unsubscribe(`/${unfollowUsername}`);
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}-wasFollowed`);
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}-wasUnfollowed`);
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}-followed`);
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}-unfollowed`);
         
         unprovideInfo(this.node, unfollowUsername);
 
         this.info().removeFollowing(unfollowUsername);
         delete this.profiles[unfollowUsername]; // Clear the info of the unfollowed user
 
-        await publishMessage(this.node, `/${unfollowUsername}-unfollow`, this.username);
+        await publishMessage(this.node, `/${unfollowUsername}-wasUnfollowed`, this.username);
+        await publishMessage(this.node, `/${this.username}-unfollowed`, unfollowUsername);
     }
 
     /**

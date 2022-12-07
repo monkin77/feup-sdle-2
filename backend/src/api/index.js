@@ -13,8 +13,9 @@ export default () => {
         res.json({online: true});
     });
 
+    // TODO: this is for debugging purposes only
     app.get("/profiles", (req, res) => {
-        const profiles = node.profiles;
+        const profiles = Object.values(node.profiles).map(profile => profile.toJson());
         res.json(profiles);
     });
 
