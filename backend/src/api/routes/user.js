@@ -1,14 +1,15 @@
 import node from "../../models/Node.js";
 import { Router } from "express";
 import { isLoggedIn } from "../middleware/authentication.js";
-import { canFollow, existingUser, isFollowing } from "../middleware/user.js";
-import { collectInfo } from "../../lib/peer-content.js";
+import { canFollow, existingUser, isFollowing, isUser } from "../middleware/user.js";
+import { collectInfo, mergePostsIntoTimeline } from "../../lib/peer-content.js";
 
 const router = Router();
 
 export default (app) => {
     app.use("/users", router);
 
+    router.get("/:username/timeline", isLoggedIn, isUser, timelineHandler);
     router.get("/:username/info", isLoggedIn, existingUser, infoHandler);
     router.post("/:username/follow", isLoggedIn, existingUser, canFollow, followHandler);
     router.post("/:username/unfollow", isLoggedIn, existingUser, isFollowing, unfollowHandler);
@@ -52,4 +53,9 @@ async function infoHandler(req, res) {
     if (info == null) info = {};
 
     res.json(info);
+}
+
+async function timelineHandler(req, res) {
+    const timeline = mergePostsIntoTimeline();
+    res.json(timeline);
 }
