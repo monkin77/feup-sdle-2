@@ -6,7 +6,7 @@
 </script>
 
 {#if registerSelected}
-    <RegisterForm action={() => console.log("register")} secondaryAction={() => registerSelected = false} />
+    <RegisterForm secondaryAction={() => registerSelected = false} />
 {:else}
     <LoginForm secondaryAction={() => registerSelected = true} />
 {/if}
