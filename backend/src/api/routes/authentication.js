@@ -1,7 +1,7 @@
 import node from "../../models/Node.js";
-import {Router} from "express";
-import {isLoggedIn, isNotLoggedIn, isNotRegistered, validCredentials} from "../middleware/authentication.js";
-import {hashPassword} from "../../lib/passwords.js";
+import { Router } from "express";
+import { isLoggedIn, isNotLoggedIn, isNotRegistered, validCredentials } from "../middleware/authentication.js";
+import { hashPassword } from "../../lib/passwords.js";
 import * as validators from "../middleware/validators/authentication.js";
 
 const router = Router();

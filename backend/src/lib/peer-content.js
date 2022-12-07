@@ -1,7 +1,7 @@
 import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import all from "it-all";
-
+import peer from "../models/Node.js";
 
 /**
  * Get the content from the DHT
@@ -61,7 +61,7 @@ export const discoveryTopic = "_peer-discovery._p2p._pubsub";
  * @param {Libp2p} node 
  * @param {string} key 
  */
-export const provideInfo = async (peer, key) => {
+export const provideInfo = async(key) => {
     const node = peer.node;
     const cid = await createCID(key);
 
@@ -69,10 +69,14 @@ export const provideInfo = async (peer, key) => {
     await node.contentRouting.provide(cid);
 
     // Node register the retrieve function to be called when a peer request the content
-    node.fetchService.registerLookupFunction(`/${key}`, () => {
-        const info = peer.getInfo(key);
-        return new TextEncoder().encode(JSON.stringify(info));
-    });
+    try {
+        node.fetchService.registerLookupFunction(`/${key}`, () => {
+            const info = peer.getInfo(key);
+            return new TextEncoder().encode(JSON.stringify(info));
+        });
+    } catch (err) {
+        console.log(`Error registering the lookup function for ${key}: ${err}`);
+    }
 };
 
 /**
@@ -81,11 +85,16 @@ export const provideInfo = async (peer, key) => {
  * @param {Libp2p} peer 
  * @param {string} key 
  */
-export const unprovideInfo = async (peer, key) => {
+export const unprovideInfo = async(key) => {
     const node = peer.node;
-    
+
+    // TODO: Check if we don't need anything else to unprovide
     // Theres is no unprovide so it continues providing but unregister the providing callback
-    node.fetchService.unregisterLookupFunction(`/${key}`);
+    try {
+        node.fetchService.unregisterLookupFunction(`/${key}`);
+    } catch (err) {
+        console.log(`Error unregistering the lookup function for ${key}: ${err}`);
+    }
 };
 
 /**
@@ -93,25 +102,55 @@ export const unprovideInfo = async (peer, key) => {
  * Fetch the content from the first peer that provides it. // TODO: tweek this
  * @param {Libp2p} node 
  * @param {string} key 
+ * @returns {object} Dictionary with the content if found, null otherwise.
  */
-export const collectInfo = async (peer, key) => {
+export const collectInfo = async(key) => {
     const node = peer.node;
-    const cid = await createCID(key);
 
-    const providers = await all(node.contentRouting.findProviders(
-        cid,
-        { maxTimeout: 1000, maxNumProviders: 1 }
-    ));
-    for (const provider of providers) {
-        let info = await node.fetch(provider.id, `/${key}`);
-        return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
+    const providers = await getPeerProviders(key);
+    if (providers.length === 0) {
+        return null;
     }
-    return {};
+
+    // TODO: Check how info will be updated from the providers
+    for (const provider of providers) {
+        try {
+            let info = await node.fetch(provider.id, `/${key}`);
+            return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
+        } catch (err) {
+            console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
+        }
+    }
+
+    return null;
 };
 
-const createCID = async (content) => {
+/**
+ * Gets the peers that provide the content for the given key.
+ * @param {*} key 
+ * @returns List of peers that provide the content excluding itself. If no peers are found, returns an empty list.
+ */
+export const getPeerProviders = async(key) => {
+    const cid = await createCID(key);
+
+    let providers = [];
+    // TODO: Providers list should not include own node?
+    try {
+        providers = await all(peer.node.contentRouting.findProviders(
+            cid, { maxTimeout: 1000, maxNumProviders: 10 } // TODO: Check maxNumProviders
+        ));
+    } catch (err) { /* empty */ }
+
+    // Remove own node from the list
+    providers = providers.filter(provider => !peer.node.peerId.equals(provider.id));
+
+    // console.log("providers:", providers);
+    return providers;
+};
+
+
+const createCID = async(content) => {
     const bytes = new TextEncoder().encode(content);
     const hash = await sha256.digest(bytes);
     return CID.create(1, 0x55, hash);
 };
-

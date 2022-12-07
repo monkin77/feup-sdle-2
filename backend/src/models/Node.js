@@ -46,7 +46,7 @@ class Node {
      */
     subscribedTopics = [];
 
-    subscriptionHandler = () => async (evt) => {
+    subscriptionHandler = () => async(evt) => {
         singletonNode.subscribedTopics
             .filter(topic => topic.condition(evt.detail.topic))
             .forEach(topic => {
@@ -140,6 +140,7 @@ class Node {
      */
     async register(username, password) {
         await putContent(this.node, `/${username}`, password);
+
     }
 
     /**
@@ -148,13 +149,20 @@ class Node {
      */
     async login(username) {
         this.username = username;
-        this.profiles[this.username] = new Info();
+        const collectStatus = await collectInfo(this.username);
+        if (collectStatus)
+            console.log("Recovered account info: ", this.info());
+        else {
+            console.log("Account's info not found. Inserting new info");
+            // If the user is not found, its info is created from scratch
+            this.profiles[this.username] = new Info();
+        }
 
         this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.username}-follow`);
         this.node.pubsub.subscribe(`/${this.username}-unfollow`);
 
-        await provideInfo(this, this.username);
+        await provideInfo(this.username);
     }
 
     /**
@@ -171,15 +179,18 @@ class Node {
      * @param {*} followUsername Username of the user to follow
      */
     async follow(followUsername) {
+        const followUserInfo = await collectInfo(followUsername);
+        if (followUserInfo == null) return false;
+
+        this.setInfo(followUsername, followUserInfo);
+        await provideInfo(followUsername);
+
         this.node.pubsub.subscribe(`/${followUsername}`);
 
         await publishMessage(this.node, `/${followUsername}-follow`, this.username);
 
         this.info().addFollowing(followUsername);
-
-        const followUserInfo = await collectInfo(this, followUsername);
-        this.setInfo(followUsername, followUserInfo);
-        await provideInfo(this, followUsername);
+        return true;
     }
 
     /**
@@ -188,9 +199,13 @@ class Node {
      */
     async unfollow(unfollowUsername) {
         this.node.pubsub.unsubscribe(`/${unfollowUsername}`);
+
         this.info().removeFollowing(unfollowUsername);
+        // TODO: Is this necessary?
+        this.setInfo(unfollowUsername, null); // Clear the info of the unfollowed user
 
         await publishMessage(this.node, `/${unfollowUsername}-unfollow`, this.username);
+
         unprovideInfo(this.node, unfollowUsername);
     }
 
