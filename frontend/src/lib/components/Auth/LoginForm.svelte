@@ -10,7 +10,6 @@
     const data = {};
 
     const login = async () => {
-        console.log(data);
         const res = await fetch(PUBLIC_BACKEND_URL + "/auth/login", {
             method: "POST",
             headers: {
