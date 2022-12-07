@@ -6,7 +6,9 @@
 </script>
 
 {#if $isLoggedIn}
-    <h1>Logged in</h1>
+<div class="flex h-full items-center justify-center">
+    <h1 class="text-white text-3xl">You're in</h1>
+</div>
 {:else}
     <LoginPage />
 {/if}
