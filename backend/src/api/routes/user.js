@@ -45,9 +45,9 @@ async function unfollowHandler(req, res) {
  */
 async function infoHandler(req, res) {
     const username = req.params.username;
-    let info = username === node.username || node.info().hasFollowing(username) ?
-        node.getInfo(username) :
-        await collectInfo(username);
+    let info = username === node.username || node.info().hasFollowing(username)
+        ? node.getInfo(username)
+        : await collectInfo(username);
 
     if (info == null) info = {};
 

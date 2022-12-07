@@ -134,13 +134,12 @@ class Node {
     }
 
     /**
-     * Registers an account.
+     * Registers an account by placing its 'password' in the DHT with the key '/<username>'.
      * @param {*} username
      * @param {*} password
      */
     async register(username, password) {
         await putContent(this.node, `/${username}`, password);
-
     }
 
     /**
@@ -149,13 +148,15 @@ class Node {
      */
     async login(username) {
         this.username = username;
-        const collectStatus = await collectInfo(this.username);
-        if (collectStatus)
+        const collectedInfo = await collectInfo(this.username);
+        if (collectedInfo) {
+            this.profiles[this.username] = new Info(collectedInfo);
             console.log("Recovered account info: ", this.info());
+        }
         else {
-            console.log("Account's info not found. Inserting new info");
             // If the user is not found, its info is created from scratch
             this.profiles[this.username] = new Info();
+            console.log("Account's info not found. Inserting new info");
         }
 
         this.subscribeTopics();
@@ -163,6 +164,18 @@ class Node {
         this.node.pubsub.subscribe(`/${this.username}-unfollow`);
 
         await provideInfo(this.username);
+
+        // Collect all following users info
+        const following = Array.from(this.info().getFollowing());
+        following.forEach(async (user) => {
+            const followUserInfo = await collectInfo(user);
+            if (followUserInfo == null) return;
+
+            this.setInfo(user, followUserInfo);
+            await provideInfo(user);
+
+            this.node.pubsub.subscribe(`/${user}`);
+        });
     }
 
     /**
@@ -180,16 +193,20 @@ class Node {
      */
     async follow(followUsername) {
         const followUserInfo = await collectInfo(followUsername);
+        console.log("Follow user info: ", followUserInfo);
         if (followUserInfo == null) return false;
 
         this.setInfo(followUsername, followUserInfo);
+        this.info().addFollowing(followUsername);
+        console.log("Info:", this.info());
+        console.log("Profiles:", this.profiles);
+
         await provideInfo(followUsername);
 
         this.node.pubsub.subscribe(`/${followUsername}`);
 
         await publishMessage(this.node, `/${followUsername}-follow`, this.username);
 
-        this.info().addFollowing(followUsername);
         return true;
     }
 
@@ -199,14 +216,13 @@ class Node {
      */
     async unfollow(unfollowUsername) {
         this.node.pubsub.unsubscribe(`/${unfollowUsername}`);
+        
+        unprovideInfo(this.node, unfollowUsername);
 
         this.info().removeFollowing(unfollowUsername);
-        // TODO: Is this necessary?
-        this.setInfo(unfollowUsername, null); // Clear the info of the unfollowed user
+        delete this.profiles[unfollowUsername]; // Clear the info of the unfollowed user
 
         await publishMessage(this.node, `/${unfollowUsername}-unfollow`, this.username);
-
-        unprovideInfo(this.node, unfollowUsername);
     }
 
     /**
@@ -221,9 +237,9 @@ class Node {
             timestamp: Date.now(),
         };
 
-        await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
-
         this.info().addPost(post);
+        
+        await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
         return post;
     }
@@ -264,7 +280,7 @@ class Node {
     }
 
     /**
-     * Alias fot this.profiles[this.username]
+     * Alias for this.profiles[this.username]
      * @returns Logged in user's info.
      */
     info() {

@@ -111,12 +111,13 @@ export const collectInfo = async(key) => {
     if (providers.length === 0) {
         return null;
     }
+    console.log(`Found ${providers.length} providers for ${key}: ${providers.map(provider => provider.id)}`);
 
     // TODO: Check how info will be updated from the providers
     for (const provider of providers) {
         try {
             let info = await node.fetch(provider.id, `/${key}`);
-            return JSON.parse(new TextDecoder().decode(info)); // TODO: merge infos instead of return on the first (?) 
+            return JSON.parse(new TextDecoder().decode(info)); 
         } catch (err) {
             console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
         }
@@ -134,7 +135,6 @@ export const getPeerProviders = async(key) => {
     const cid = await createCID(key);
 
     let providers = [];
-    // TODO: Providers list should not include own node?
     try {
         providers = await all(peer.node.contentRouting.findProviders(
             cid, { maxTimeout: 1000, maxNumProviders: 10 } // TODO: Check maxNumProviders
@@ -144,7 +144,6 @@ export const getPeerProviders = async(key) => {
     // Remove own node from the list
     providers = providers.filter(provider => !peer.node.peerId.equals(provider.id));
 
-    // console.log("providers:", providers);
     return providers;
 };
 

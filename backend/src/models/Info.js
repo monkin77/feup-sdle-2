@@ -9,6 +9,18 @@ export class Info {
         }
     }
 
+    getFollowers() {
+        return this.followers;
+    }
+
+    getFollowing() {
+        return this.following;
+    }
+
+    getTimeline() {
+        return this.timeline;
+    }
+
     addFollowing(username) {
         this.following.add(username);
     }
