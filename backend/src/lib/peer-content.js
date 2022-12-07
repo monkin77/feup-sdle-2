@@ -76,6 +76,19 @@ export const provideInfo = async (peer, key) => {
 };
 
 /**
+ * Unregister the lookup function to be called when a peer wants to get the content.
+ * The unprovide can't be done since there is no support for it.
+ * @param {Libp2p} peer 
+ * @param {string} key 
+ */
+export const unprovideInfo = async (peer, key) => {
+    const node = peer.node;
+    
+    // Theres is no unprovide so it continues providing but unregister the providing callback
+    node.fetchService.unregisterLookupFunction(`/${key}`);
+};
+
+/**
  * Find the peers that provide the content for the given key.
  * Fetch the content from the first peer that provides it. // TODO: tweek this
  * @param {Libp2p} node 

@@ -6,7 +6,7 @@ import { bootstrap } from "@libp2p/bootstrap";
 import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import { kadDHT } from "@libp2p/kad-dht";
-import { discoveryTopic, collectInfo, provideInfo, publishMessage, putContent } from "../lib/peer-content.js";
+import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
 
@@ -191,7 +191,7 @@ class Node {
         this.info().removeFollowing(unfollowUsername);
 
         await publishMessage(this.node, `/${unfollowUsername}-unfollow`, this.username);
-        // TODO: unprovideInfo(this.node, `/${username}`);
+        unprovideInfo(this.node, unfollowUsername);
     }
 
     /**
