@@ -6,6 +6,7 @@ import { pubsubPeerDiscovery } from "@libp2p/pubsub-peer-discovery";
 import { gossipsub } from "@chainsafe/libp2p-gossipsub";
 import peerIdLib from "peer-id";
 import { createFromJSON } from "@libp2p/peer-id-factory";
+import { kadDHT } from "@libp2p/kad-dht";
 import fs from "fs";
 
 export const createPeerId = async() => {
@@ -54,12 +55,7 @@ class BootstrapNode {
                     interval: 1000
                 })
             ],
-            /*  relay: {
-                 enabled: true, // Allows you to dial and accept relayed connections. Does not make you a bootstrap.
-                 hop: {
-                     enabled: true // Allows you to be a bootstrap for other peers
-                 }
-             }, */
+            dht: kadDHT(),
         };
 
         return nodeOptions;
