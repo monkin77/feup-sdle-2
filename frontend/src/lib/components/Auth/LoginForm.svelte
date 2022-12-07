@@ -3,6 +3,7 @@
     import FormField from "../Form/FormField.svelte";
     import AuthModal from "./AuthModal.svelte";
     import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { isLoggedIn } from "../../stores";
 
     export let secondaryAction;
 
@@ -16,9 +17,13 @@
                 "Content-Type": "application/json"
             },
             body: JSON.stringify(data)
-        }).then(res => res.json());
+        });
+        const body = await res.json();
 
-        console.log(res);
+        if (res.ok) {
+            isLoggedIn.update(() => true);
+        }
+        console.log(body);
     }
 </script>
 
