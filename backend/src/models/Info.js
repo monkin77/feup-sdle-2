@@ -5,7 +5,7 @@ export class Info {
         } else {
             this.followers = new Set();
             this.following = new Set();
-            this.timeline = [];
+            this.posts = [];
         }
     }
 
@@ -34,7 +34,7 @@ export class Info {
     }
 
     addPost(post) {
-        this.timeline.push(post);
+        this.posts.push(post);
     }
 
     /**
@@ -44,7 +44,7 @@ export class Info {
         return {
             followers: Array.from(this.followers),
             following: Array.from(this.following),
-            timeline: this.timeline,
+            posts: this.posts,
         };
     }
     /**
@@ -53,6 +53,6 @@ export class Info {
     fromJson(json) {
         this.followers = new Set(json.followers);
         this.following = new Set(json.following);
-        this.timeline = json.timeline;
+        this.posts = json.posts;
     }
 }
