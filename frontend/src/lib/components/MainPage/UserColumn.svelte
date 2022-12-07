@@ -1,8 +1,14 @@
 <script>
-	import Profile from "./User/Profile.svelte";
+	import CreatePostForm from "./Posts/CreatePostForm.svelte";
+    import Profile from "./User/Profile.svelte";
 
     export let username;
     export let followers;
 </script>
 
-<Profile {username} />
+<div class="flex flex-col gap-2 h-full">
+    <div class="mb-4">
+        <Profile {username} />
+    </div>
+    <CreatePostForm />
+</div>

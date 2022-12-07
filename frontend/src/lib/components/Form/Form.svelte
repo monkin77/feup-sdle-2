@@ -1,4 +1,6 @@
 <script>
+	import Button from "./Button.svelte";
+
     export let buttonText;
     export let action;
     export let secondaryText;
@@ -8,9 +10,7 @@
 <form>
     <slot />
     <div class="flex items-center justify-around">
-        <button class="bg-indigo-600 hover:bg-indigo-900 text-white font-bold py-2 px-4 rounded" type="submit" on:click={action}>
-            {buttonText}
-        </button>
+        <Button {buttonText} {action} />
 
         {#if secondaryText}
             <a class="inline-block font-bold text-sm text-indigo-600 hover:text-indigo-900" on:click={secondaryAction} href={"#"}>
