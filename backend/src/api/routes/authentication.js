@@ -12,6 +12,7 @@ export default (app) => {
     router.post("/register", validators.register, isNotRegistered, registerHandler);
     router.post("/login", validators.login, isNotLoggedIn, validCredentials, loginHandler);
     router.post("/logout", isLoggedIn, logoutHandler);
+    router.get("/me", meHandler);
 };
 
 /**
@@ -38,4 +39,11 @@ async function loginHandler(req, res) {
 async function logoutHandler(req, res) {
     await node.logout();
     res.json({});
+}
+
+/**
+ * Informs if the node is logged in
+ */
+async function meHandler(req, res) {
+    res.json({ isLoggedIn: node.isLoggedIn() });
 }
