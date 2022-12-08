@@ -1,5 +1,10 @@
+import { isLoggedIn } from "../lib/stores"
+import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
-export function load() {
+export async function load() {
+    const res = await fetch(PUBLIC_BACKEND_URL + "/auth/me");
+    isLoggedIn.set((await res.json()).isLoggedIn);
+
     return {
         username: "BroZendo",
         followers: ["Monkerino", "PitRui", "Henry Nunes"],
