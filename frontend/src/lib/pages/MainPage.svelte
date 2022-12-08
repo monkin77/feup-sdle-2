@@ -1,5 +1,6 @@
 <script>
-	import RecommendedColumn from "../components/MainPage/RecommendedColumn.svelte";
+	import FeedColumn from "../components/MainPage/FeedColumn.svelte";
+import RecommendedColumn from "../components/MainPage/RecommendedColumn.svelte";
     import UserColumn from "../components/MainPage/UserColumn.svelte";
 
     export let data;
@@ -10,7 +11,7 @@
         <UserColumn username={data.username} following={data.following} />
     </div>
     <div class="col-span-2 w-full">
-        Boas
+        <FeedColumn timeline={data.timeline} />
     </div>
     <div class="col-span-1 w-full">
         <RecommendedColumn recommendedFollowers={data.followers} />

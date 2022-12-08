@@ -12,7 +12,7 @@ export async function load() {
         timeline: [
             {
                 username: "BroZendo",
-                text: "This is a really great post, I am so proud of this post omg lol",
+                text: "This is a really great post, I am so proud of this post omg lol.This is a really great post, I am so proud of this post omg lolThis is a really great post, I am so proud of this post omg lolThis is a really great post, I am so proud of this post omg lol\nThis is a really great post, I am so proud of this post omg lolThis is a really great post, I am so proud of this post omg lolThis is a really great post, I am so proud of this post omg lolThis is a really great post, I am so proud of this post omg lol\nThis is a really great post, I am so proud of this post omg lol",
                 timestamp: 1670405480
             },
             {
