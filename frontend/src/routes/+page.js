@@ -3,7 +3,7 @@ export function load() {
     return {
         username: "BroZendo",
         followers: ["Monkerino", "PitRui", "Henry Nunes"],
-        following: ["PitRui", "Henry Nunes"],
+        following: ["Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes"],
         timeline: [
             {
                 username: "BroZendo",

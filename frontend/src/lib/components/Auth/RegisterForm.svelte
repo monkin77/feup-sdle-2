@@ -9,7 +9,6 @@
     const data = {};
 
     const register = async () => {
-        console.log(data);
         const res = await fetch(PUBLIC_BACKEND_URL + "/auth/register", {
             method: "POST",
             headers: {

@@ -20,7 +20,7 @@
         const body = await res.json();
 
         if (res.ok) {
-            isLoggedIn.update(() => true);
+            isLoggedIn.set(true);
         }
         console.log(body);
     }

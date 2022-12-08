@@ -15,7 +15,7 @@
         });
 
         if (res.ok) {
-            isLoggedIn.update(() => false);
+            isLoggedIn.set(false);
         }
         console.log(res);
     }
@@ -24,7 +24,7 @@
 <div class="flex justify-between items-center">
     <div class="flex justify-start items-center">
         <img src={avatar} class="rounded-full w-16 h-16" alt="your avatar" />
-        <p class="px-3">{username}</p>
+        <p class="text-xl font-medium px-3">{username}</p>
     </div>
     <button class="hover:bg-slate-700 rounded-md h-9 w-9" on:click={logout}>
         <Icon class="w-9 h-7" icon="material-symbols:logout" />
