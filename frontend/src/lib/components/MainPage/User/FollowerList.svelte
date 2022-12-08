@@ -5,7 +5,7 @@
     export let isFollowing;
 </script>
 
-<h3 class="text-3xl font-extrabold tracking-wide">
+<h3 class="text-3xl font-extrabold tracking-wide pl-3">
     {#if isFollowing}
         Following
     {:else}

@@ -1,5 +1,6 @@
 <script>
-	import UserColumn from "../components/MainPage/UserColumn.svelte";
+	import RecommendedColumn from "../components/MainPage/RecommendedColumn.svelte";
+    import UserColumn from "../components/MainPage/UserColumn.svelte";
 
     export let data;
 </script>
@@ -12,6 +13,6 @@
         Boas
     </div>
     <div class="col-span-1 w-full">
-        Boas
+        <RecommendedColumn recommendedFollowers={data.followers} />
     </div>
 </div>
