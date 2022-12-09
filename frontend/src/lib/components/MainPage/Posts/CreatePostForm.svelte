@@ -1,7 +1,6 @@
 <script>
 	import Button from "../../Form/Button.svelte";
 
-
     let text;
 </script>
 

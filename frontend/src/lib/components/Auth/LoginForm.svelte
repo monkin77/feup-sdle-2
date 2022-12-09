@@ -2,23 +2,15 @@
 	import Form from "../Form/Form.svelte";
     import FormField from "../Form/FormField.svelte";
     import AuthModal from "./AuthModal.svelte";
-    import { PUBLIC_BACKEND_URL } from '$env/static/public';
 	import { isLoggedIn } from "../../stores";
+    import { loginRequest } from "../../requests";
 
     export let secondaryAction;
 
     const data = {};
 
     const login = async () => {
-        const res = await fetch(PUBLIC_BACKEND_URL + "/auth/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        });
-        const body = await res.json();
-
+        const {res, body} = await loginRequest(data.username, data.password);
         if (res.ok) {
             isLoggedIn.set(true);
         }

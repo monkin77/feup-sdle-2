@@ -2,18 +2,12 @@
     import Icon from '@iconify/svelte';
 	import { isLoggedIn } from '../../../stores';
     import avatar from "./avatar.svg";
-    import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { logoutRequest } from '../../../requests';
 
     export let username;
 
     const logout = async () => {
-        const res = await fetch(PUBLIC_BACKEND_URL + "/auth/logout", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            }
-        });
-
+        const {res} = await logoutRequest();
         if (res.ok) {
             isLoggedIn.set(false);
         }

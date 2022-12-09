@@ -1,9 +1,11 @@
 import { isLoggedIn } from "../lib/stores"
-import { PUBLIC_BACKEND_URL } from '$env/static/public';
+import { checkAuthRequest } from "../lib/requests";
 
 export async function load() {
-    const res = await fetch(PUBLIC_BACKEND_URL + "/auth/me");
-    isLoggedIn.set((await res.json()).isLoggedIn);
+    const {res, body} = await checkAuthRequest();
+    if (res.ok) {
+        isLoggedIn.set(body.isLoggedIn);
+    }
 
     return {
         username: "BroZendo",

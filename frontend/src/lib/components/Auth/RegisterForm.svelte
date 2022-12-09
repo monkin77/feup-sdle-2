@@ -2,21 +2,14 @@
 	import FormField from "../Form/FormField.svelte";
     import Form from "../Form/Form.svelte";
 	import AuthModal from "./AuthModal.svelte";
-    import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { registerRequest } from "../../requests";
 
     export let secondaryAction;
 
     const data = {};
 
     const register = async () => {
-        const res = await fetch(PUBLIC_BACKEND_URL + "/auth/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        }).then(res => res.json());
-
+        const {res} = await registerRequest(data.username, data.password);
         console.log(res);
     }
 </script>

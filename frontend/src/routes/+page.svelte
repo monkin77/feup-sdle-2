@@ -7,7 +7,7 @@
 </script>
 
 {#if $isLoggedIn}
-<MainPage {data} />
+    <MainPage {data} />
 {:else}
     <LoginPage />
 {/if}
