@@ -49,3 +49,27 @@ export const checkAuthRequest = async () => {
 
     return {res, body};
 };
+
+export const followRequest = async (username) => {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/follow`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+    const body = await res.json();
+
+    return {res, body};
+};
+
+export const unfollowRequest = async (username) => {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/unfollow`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+    const body = await res.json();
+
+    return {res, body};
+}
