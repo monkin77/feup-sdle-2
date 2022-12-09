@@ -58,25 +58,48 @@ class Node {
     subscribeTopics() {
         // New post from a followed user
         this.subscribeTopic(
-            topic => this.info().hasFollowing(topic),
-            async data => {
-                this.info().addPost(data);
+            topic => this.info().hasFollowing(topic.substring(1)),
+            async (data, evt) => {
+                this.profiles[evt.detail.topic.substring(1)].addPost(JSON.parse(data));
             }
         );
 
         // New follower
-        this.subscribeTopic(
-            `/${this.username}-follow`,
-            async username => {
-                this.info().addFollowers(username);
-            }
-        );
+        this.subscribeFollowVariantTopic("wasFollowed");
 
-        // Unfollowed
+        // New following
+        this.subscribeFollowVariantTopic("followed");
+
+        // New unfollower
+        this.subscribeFollowVariantTopic("wasUnfollowed");
+
+        // New unfollowing
+        this.subscribeFollowVariantTopic("unfollowed");
+    }
+
+    /**
+     * Subscribe to a topic that will be triggered when a user follows or unfollows another user or a user is followed or unfollowed by another user.
+     * @param {string} variant One of {'wasFollowed', 'followed', 'wasUnfollowed', 'unfollowed'}
+     */
+    subscribeFollowVariantTopic(variant) {
         this.subscribeTopic(
-            `/${this.username}-unfollow`,
-            async username => {
-                this.info().removeFollowers(username);
+            topic => {
+                const username = topic.substring(1, topic.length - `-${variant}`.length);
+                return username === this.username || this.info().hasFollowing(username);
+            },
+            async (dataUsername, evt) => {
+                const topic = evt.detail.topic;
+                const username = topic.substring(1, topic.length - `-${variant}`.length);
+                if (variant === "wasFollowed")
+                    this.profiles[username].addFollowers(dataUsername);
+                else if (variant === "followed")
+                    this.profiles[username].addFollowing(dataUsername);
+                else if (variant === "wasUnfollowed")
+                    this.profiles[username].removeFollowers(dataUsername);
+                else if (variant === "unfollowed")
+                    this.profiles[username].removeFollowing(dataUsername);
+                else 
+                    throw new Error("Topic not implemented");
             }
         );
     }
@@ -134,13 +157,12 @@ class Node {
     }
 
     /**
-     * Registers an account.
+     * Registers an account by placing its 'password' in the DHT with the key '/<username>'.
      * @param {*} username
      * @param {*} password
      */
     async register(username, password) {
         await putContent(this.node, `/${username}`, password);
-
     }
 
     /**
@@ -149,20 +171,38 @@ class Node {
      */
     async login(username) {
         this.username = username;
-        const collectStatus = await collectInfo(this.username);
-        if (collectStatus)
+        const collectedInfo = await collectInfo(this.username);
+        if (collectedInfo) {
+            this.profiles[this.username] = new Info(collectedInfo);
             console.log("Recovered account info: ", this.info());
+        }
         else {
-            console.log("Account's info not found. Inserting new info");
             // If the user is not found, its info is created from scratch
             this.profiles[this.username] = new Info();
+            console.log("Account's info not found. Inserting new info");
         }
 
         this.subscribeTopics();
-        this.node.pubsub.subscribe(`/${this.username}-follow`);
-        this.node.pubsub.subscribe(`/${this.username}-unfollow`);
+        this.node.pubsub.subscribe(`/${this.username}-wasFollowed`);
+        this.node.pubsub.subscribe(`/${this.username}-wasUnfollowed`);
 
         await provideInfo(this.username);
+
+        // Collect all following users info, provide it and subscribe to their topics
+        const following = Array.from(this.info().getFollowing());
+        following.forEach(async (user) => {
+            const followUserInfo = await collectInfo(user);
+            if (followUserInfo == null) return;
+
+            this.setInfo(user, followUserInfo);
+            await provideInfo(user);
+
+            this.node.pubsub.subscribe(`/${user}`);
+            this.node.pubsub.subscribe(`/${user}-wasFollowed`);
+            this.node.pubsub.subscribe(`/${user}-wasUnfollowed`);
+            this.node.pubsub.subscribe(`/${user}-followed`);
+            this.node.pubsub.subscribe(`/${user}-unfollowed`);
+        });
     }
 
     /**
@@ -183,13 +223,19 @@ class Node {
         if (followUserInfo == null) return false;
 
         this.setInfo(followUsername, followUserInfo);
+        this.info().addFollowing(followUsername);
+
         await provideInfo(followUsername);
 
         this.node.pubsub.subscribe(`/${followUsername}`);
+        this.node.pubsub.subscribe(`/${followUsername}-wasFollowed`);
+        this.node.pubsub.subscribe(`/${followUsername}-wasUnfollowed`);
+        this.node.pubsub.subscribe(`/${followUsername}-followed`);
+        this.node.pubsub.subscribe(`/${followUsername}-unfollowed`);
 
-        await publishMessage(this.node, `/${followUsername}-follow`, this.username);
+        await publishMessage(this.node, `/${followUsername}-wasFollowed`, this.username);
+        await publishMessage(this.node, `/${this.username}-followed`, followUsername);
 
-        this.info().addFollowing(followUsername);
         return true;
     }
 
@@ -199,14 +245,18 @@ class Node {
      */
     async unfollow(unfollowUsername) {
         this.node.pubsub.unsubscribe(`/${unfollowUsername}`);
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}-wasFollowed`);
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}-wasUnfollowed`);
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}-followed`);
+        this.node.pubsub.unsubscribe(`/${unfollowUsername}-unfollowed`);
+        
+        unprovideInfo(this.node, unfollowUsername);
 
         this.info().removeFollowing(unfollowUsername);
-        // TODO: Is this necessary?
-        this.setInfo(unfollowUsername, null); // Clear the info of the unfollowed user
+        delete this.profiles[unfollowUsername]; // Clear the info of the unfollowed user
 
-        await publishMessage(this.node, `/${unfollowUsername}-unfollow`, this.username);
-
-        unprovideInfo(this.node, unfollowUsername);
+        await publishMessage(this.node, `/${unfollowUsername}-wasUnfollowed`, this.username);
+        await publishMessage(this.node, `/${this.username}-unfollowed`, unfollowUsername);
     }
 
     /**
@@ -221,9 +271,9 @@ class Node {
             timestamp: Date.now(),
         };
 
-        await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
-
         this.info().addPost(post);
+        
+        await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
         return post;
     }
@@ -264,7 +314,7 @@ class Node {
     }
 
     /**
-     * Alias fot this.profiles[this.username]
+     * Alias for this.profiles[this.username]
      * @returns Logged in user's info.
      */
     info() {
