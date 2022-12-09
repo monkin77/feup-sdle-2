@@ -2,7 +2,8 @@
 	import FormField from "../Form/FormField.svelte";
     import Form from "../Form/Form.svelte";
 	import AuthModal from "./AuthModal.svelte";
-	import { registerRequest } from "../../requests";
+	import { loginRequest, registerRequest } from "../../requests";
+	import { isLoggedIn } from "../../stores";
 
     export let secondaryAction;
 
@@ -11,6 +12,12 @@
     const register = async () => {
         const {res} = await registerRequest(data.username, data.password);
         console.log(res);
+
+        const {res: res2} = await loginRequest(data.username, data.password);
+        if (res2.ok) {
+            isLoggedIn.set(true);
+        }
+        console.log(res2);
     }
 </script>
 
