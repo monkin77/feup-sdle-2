@@ -52,3 +52,18 @@ export const existingUser = async(req, res, next) => {
 
     return next();
 };
+
+/**
+ * Verifies if the user is the one logged in.
+ */
+export const isUser = async(req, res, next) => {
+    const username = req.params.username;
+    if (username !== node.username) {
+        return next({
+            status: StatusCodes.FORBIDDEN,
+            error: "You cannot access another user's information",
+        });
+    }
+
+    return next();
+};

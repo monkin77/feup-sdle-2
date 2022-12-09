@@ -58,7 +58,6 @@ export const discoveryTopic = "_peer-discovery._p2p._pubsub";
 /**
  * Announce that this node provides the content correspondent to the key.
  * Register the lookup function to be called when a peer wants to get the content.
- * @param {Libp2p} node 
  * @param {string} key 
  */
 export const provideInfo = async(key) => {
@@ -82,7 +81,6 @@ export const provideInfo = async(key) => {
 /**
  * Unregister the lookup function to be called when a peer wants to get the content.
  * The unprovide can't be done since there is no support for it.
- * @param {Libp2p} peer 
  * @param {string} key 
  */
 export const unprovideInfo = async(key) => {
@@ -147,9 +145,26 @@ export const getPeerProviders = async(key) => {
     return providers;
 };
 
-
+/**
+ * Create a CID from the given content.
+ * @param {string} content 
+ * @returns CID of the content
+ */
 const createCID = async(content) => {
     const bytes = new TextEncoder().encode(content);
     const hash = await sha256.digest(bytes);
     return CID.create(1, 0x55, hash);
+};
+
+/**
+ * Collect the posts of peer profiles object and merge them into a single array ordered by timestamp in reverse.
+ * @returns {Array} All the posts of the own user and the users he is following ordered by timestamp in reverse.
+ */
+export const mergePostsIntoTimeline = () => {
+    const timeline = [];
+    Object.values(peer.profiles).forEach(profile => {
+        timeline.push(...profile.posts);
+    });
+    timeline.sort((a,b) => b.timestamp - a.timestamp);
+    return timeline;
 };
