@@ -8,26 +8,50 @@ export const timeAgo = (timestamp) => {
     const elapsed = Date.now() - timestamp;
 
     if (elapsed < MS_PER_MINUTE) {
-        return `${Math.round(elapsed / 1000)}s`;
+        const seconds = Math.round(elapsed / 1000);
+        if (seconds === 1) {
+            return `${seconds} second ago`;
+        }
+        return `${seconds} seconds ago`;
     }
 
     else if (elapsed < MS_PER_HOUR) {
-        return `${Math.round(elapsed / MS_PER_MINUTE)}min`;   
+        const minutes = Math.round(elapsed / MS_PER_MINUTE);
+        if (minutes === 1) {
+            return `${minutes} minute ago`;
+        }
+        return `${minutes} minutes ago`;
     }
 
     else if (elapsed < MS_PER_DAY ) {
-        return `${Math.round(elapsed / MS_PER_HOUR)}h`;   
+        const hours = Math.round(elapsed / MS_PER_HOUR);
+        if (hours === 1) {
+            return `${hours} hour ago`;
+        }
+        return `${hours} hours ago`;
     }
 
     else if (elapsed < MS_PER_MONTH) {
-        return `${Math.round(elapsed / MS_PER_DAY)}d`;   
+        const days = Math.round(elapsed / MS_PER_DAY);
+        if (days === 1) {
+            return `${days} day ago`;
+        }
+        return `${days} days ago`; 
     }
 
     else if (elapsed < MS_PER_YEAR) {
-        return `${Math.round(elapsed / MS_PER_MONTH)}mo`; 
+        const months = Math.round(elapsed / MS_PER_MONTH);
+        if (months === 1) {
+            return `${months} month ago`;
+        }
+        return `${months} months ago`; 
     }
 
     else {
-        return `${Math.round(elapsed / MS_PER_MONTH)}y`; 
+        const years = Math.round(elapsed / MS_PER_YEAR);
+        if (years === 1) {
+            return `${years} year ago`;
+        }
+        return `${years} years ago`;
     }
 };
