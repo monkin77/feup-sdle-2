@@ -15,7 +15,10 @@ export default () => {
 
     // TODO: this is for debugging purposes only
     app.get("/profiles", (req, res) => {
-        const profiles = Object.values(node.profiles).map(profile => profile.toJson());
+        let profiles = {};
+        for (const profile of Object.keys(node.profiles)) {
+            profiles[profile] = node.profiles[profile].toJson();
+        }
         res.json(profiles);
     });
 
