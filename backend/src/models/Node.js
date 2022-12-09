@@ -168,8 +168,9 @@ class Node {
     /**
      * Logs in to an account.
      * @param {*} username
+     * @param {*} hashedPassword encrypted password
      */
-    async login(username) {
+    async login(username, hashedPassword) {
         this.username = username;
         const collectedInfo = await collectInfo(this.username);
         if (collectedInfo) {
@@ -181,6 +182,9 @@ class Node {
             this.profiles[this.username] = new Info();
             console.log("Account's info not found. Inserting new info");
         }
+
+        // Re-write the password so the new nodes have them in their DHT
+        await putContent(this.node, `/${username}`, hashedPassword);
 
         this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.username}-wasFollowed`);
@@ -203,6 +207,7 @@ class Node {
             this.node.pubsub.subscribe(`/${user}-followed`);
             this.node.pubsub.subscribe(`/${user}-unfollowed`);
         });
+
     }
 
     /**

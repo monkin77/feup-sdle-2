@@ -27,7 +27,8 @@ async function registerHandler(req, res) {
  * Handles the login of a user. Sends a login request to the node.
  */
 async function loginHandler(req, res) {
-    await node.login(req.body.username);
+    const hashedPassword = await hashPassword(req.body.password);
+    await node.login(req.body.username, hashedPassword);
     res.json({});
 }
 
