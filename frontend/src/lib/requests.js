@@ -86,3 +86,27 @@ export const postRequest = async (text) => {
 
     return {res, body};
 };
+
+export const getInfoRequest = async (username) => {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/info`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+    const body = await res.json();
+
+    return {res, body};
+};
+
+export const getTimelineRequest = async (username) => {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/timeline`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+    const body = await res.json();
+
+    return {res, body};
+};

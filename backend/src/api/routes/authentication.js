@@ -45,5 +45,5 @@ async function logoutHandler(req, res) {
  * Informs if the node is logged in
  */
 async function meHandler(req, res) {
-    res.json({ isLoggedIn: node.isLoggedIn() });
+    res.json({ isLoggedIn: node.isLoggedIn(), username: node.getUsername() });
 }

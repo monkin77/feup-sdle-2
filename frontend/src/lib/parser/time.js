@@ -7,7 +7,6 @@ const MS_PER_YEAR = MS_PER_DAY * 365;
 
 export const timeAgo = (timestamp) => {
     const elapsed = Date.now() - timestamp;
-    console.log(elapsed);
 
     if (elapsed < MS_PER_SECOND) {
         return "just now";
