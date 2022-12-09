@@ -59,6 +59,7 @@ export class Info {
             posts: this.posts,
         };
     }
+
     /**
      * Followers and followig arrays are converted to sets.
      */

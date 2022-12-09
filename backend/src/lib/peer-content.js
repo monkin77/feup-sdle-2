@@ -2,6 +2,7 @@ import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import all from "it-all";
 import peer from "../models/Node.js";
+import { getUserData } from "./storage.js";
 
 /**
  * Get the content from the DHT
@@ -98,6 +99,8 @@ export const unprovideInfo = async(key) => {
 /**
  * Find the peers that provide the content for the given key.
  * Fetch the content from the first peer that provides it. // TODO: tweek this
+ * If the content is not found, tries to get it locally.
+ * If the content is not found locally, returns null.
  * @param {Libp2p} node 
  * @param {string} key 
  * @returns {object} Dictionary with the content if found, null otherwise.
@@ -106,19 +109,31 @@ export const collectInfo = async(key) => {
     const node = peer.node;
 
     const providers = await getPeerProviders(key);
-    if (providers.length === 0) {
-        return null;
-    }
-    console.log(`Found ${providers.length} providers for ${key}: ${providers.map(provider => provider.id)}`);
+    let foundProviders = providers.length > 0;
 
-    // TODO: Check how info will be updated from the providers
-    for (const provider of providers) {
-        try {
-            let info = await node.fetch(provider.id, `/${key}`);
-            return JSON.parse(new TextDecoder().decode(info)); 
-        } catch (err) {
-            console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
+    if (foundProviders) {
+        console.log(`Found ${providers.length} providers for ${key}: ${providers.map(provider => provider.id)}`);
+
+        // TODO: Check how info will be updated from the providers
+        for (const provider of providers) {
+            try {
+                let info = await node.fetch(provider.id, `/${key}`);
+                return JSON.parse(new TextDecoder().decode(info));
+            } catch (err) {
+                console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
+            }
         }
+    }
+
+    // Try get local info
+    const username = peer.username;
+
+    console.log(`Trying to get info locally for ${key} on folder ./storage/${username}`);
+    const {data, error : readError} = await getUserData(username, key);
+    console.log("data", data, "error", readError);
+
+    if (!readError) {
+        return data;
     }
 
     return null;

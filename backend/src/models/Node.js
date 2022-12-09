@@ -180,7 +180,7 @@ class Node {
         else {
             // If the user is not found, its info is created from scratch
             this.profiles[this.username] = new Info();
-            console.log("Account's info not found. Inserting new info");
+            console.log("Account's info not found. Inserting new info"); 
         }
 
         // Re-write the password so the new nodes have them in their DHT
@@ -208,6 +208,7 @@ class Node {
             this.node.pubsub.subscribe(`/${user}-unfollowed`);
         });
 
+        
     }
 
     /**
