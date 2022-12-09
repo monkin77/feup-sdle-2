@@ -40,3 +40,21 @@ export const getUserData = async (loggedUsername, fileUsername) => {
         return {error: err, data: null};
     }
 };
+
+/**
+ * Deletes a user's data from the folder of the logged in user
+ * @param {string} loggedUsername logged user username
+ * @param {string} fileUsername username of the user that is being saved
+ * @returns {Dict} {err: error, data: data} If error is different from null, read operation failed
+ */
+export const deleteUserData = async (loggedUsername, fileUsername) => {
+    const path = `${STORAGE_PATH}/${loggedUsername}/${fileUsername}.json`;
+    // remove file
+    fs.unlink(path, (err) => {
+        if (err) {
+            console.log(`Error deleting file at path ${path}`);
+            return;
+        }
+        console.log(`File at path ${path} deleted`);
+    });
+};

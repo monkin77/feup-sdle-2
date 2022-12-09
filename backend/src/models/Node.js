@@ -9,7 +9,7 @@ import { kadDHT } from "@libp2p/kad-dht";
 import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
-import { saveUserData } from "../lib/storage.js";
+import { deleteUserData, saveUserData } from "../lib/storage.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -61,7 +61,9 @@ class Node {
         this.subscribeTopic(
             topic => this.info().hasFollowing(topic.substring(1)),
             async (data, evt) => {
-                this.profiles[evt.detail.topic.substring(1)].addPost(JSON.parse(data));
+                const username = evt.detail.topic.substring(1);
+                this.profiles[username].addPost(JSON.parse(data));
+                await saveUserData(this.username, username, this.profiles[username].toJson());
             }
         );
 
@@ -91,7 +93,7 @@ class Node {
             async (dataUsername, evt) => {
                 const topic = evt.detail.topic;
                 const username = topic.substring(1, topic.length - `-${variant}`.length);
-                if (variant === "wasFollowed")
+                if (variant === "wasFollowed") 
                     this.profiles[username].addFollowers(dataUsername);
                 else if (variant === "followed")
                     this.profiles[username].addFollowing(dataUsername);
@@ -101,6 +103,8 @@ class Node {
                     this.profiles[username].removeFollowing(dataUsername);
                 else
                     throw new Error("Topic not implemented");
+
+                await saveUserData(this.username, username, this.profiles[username].toJson());
             }
         );
     }
@@ -136,8 +140,8 @@ class Node {
         await this.node.start();
         console.log("Node has started");
 
-        this.node.addEventListener("peer:discovery", (e) => {
-            console.log("Discovered ", e.detail.id.toString());
+        this.node.addEventListener("peer:discovery", () => {
+            //console.log("Discovered ", e.detail.id.toString());
         });
 
         this.node.connectionManager.addEventListener("peer:connect", (e) => {
@@ -192,6 +196,8 @@ class Node {
         this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.username}-wasFollowed`);
         this.node.pubsub.subscribe(`/${this.username}-wasUnfollowed`);
+        this.node.pubsub.subscribe(`/${this.username}-followed`);
+        this.node.pubsub.subscribe(`/${this.username}-unfollowed`);
 
         await provideInfo(this.username);
 
@@ -225,13 +231,14 @@ class Node {
     }
 
     /**
-     * Subscribe to a user and set the callback function to be called when a new message is received.
+     * Follows a user, subscribe to a user topic and set the callback function to be called when a new message is received.
      * @param {*} followUsername Username of the user to follow
      */
     async follow(followUsername) {
         const followUserInfo = await collectInfo(followUsername);
         if (followUserInfo == null) return false;
 
+        // TODO?: having this here, we store the information 2 times: here and in publish on line 251
         this.setInfo(followUsername, followUserInfo);
         this.info().addFollowing(followUsername);
 
@@ -245,8 +252,6 @@ class Node {
 
         await publishMessage(this.node, `/${followUsername}-wasFollowed`, this.username);
         await publishMessage(this.node, `/${this.username}-followed`, followUsername);
-
-        // TODO: Write to local storage the information of the user (probably in the handlers of the topics)
 
         return true;
     }
@@ -269,8 +274,9 @@ class Node {
 
         await publishMessage(this.node, `/${unfollowUsername}-wasUnfollowed`, this.username);
         await publishMessage(this.node, `/${this.username}-unfollowed`, unfollowUsername);
-        
-        // TODO: Write to local storage the information of the user (probably in the handlers of the topics)
+
+        // remove the user from the local storage
+        await deleteUserData(this.username, unfollowUsername);
     }
 
     /**
@@ -286,10 +292,9 @@ class Node {
         };
 
         this.info().addPost(post);
-        
+        await saveUserData(this.username, this.username, this.profiles[this.username].toJson());
+
         await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
-        
-        // TODO: Write to local storage the information of the user (probably in the handlers of the topics)
 
         return post;
     }
@@ -315,6 +320,7 @@ class Node {
      * @returns json with the user's information.
      */
     getInfo(username) {
+        // TODO: if username === this.username return this.profile, else return data from the files
         if (this.profiles[username]) {
             return this.profiles[username].toJson();
         }
@@ -327,12 +333,12 @@ class Node {
      * @param {object} info Json object with the user's information.
      */
     async setInfo(username, info) {
-        // TODO: Write to local storage the information of the user (check if would be nice in setInfo function)
-        await saveUserData(this.username, username, info);
-        
         // TODO remove profiles of other people -> now it will be just profile instead of profiles
         // remove the set info and write the info to files
         this.profiles[username] = new Info(info);
+
+        // TODO: Write to local storage the information of the user (check if would be nice in setInfo function)
+        await saveUserData(this.username, username, info);
     }
 
     /**
