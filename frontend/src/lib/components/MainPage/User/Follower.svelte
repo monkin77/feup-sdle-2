@@ -11,11 +11,14 @@
         <p class="text-lg font-medium ml-1">{follower}</p>
     </div>
 
-    <button class="bg-indigo-600 hover:bg-indigo-900 text-sm font-bold py-1 px-2 rounded-xl" on:click={() => isFollowing = !isFollowing}>
         {#if isFollowing}
+        <button class="bg-slate-900 hover:bg-indigo-900 border border-indigo-600 text-indigo-500 text-sm font-bold py-1 px-2 rounded-xl" on:click={() => isFollowing = !isFollowing}>
             Unfollow
+        </button>
         {:else}
+        <button class="bg-indigo-600 hover:bg-indigo-900 text-sm font-bold py-1 px-2 rounded-xl" on:click={() => isFollowing = !isFollowing}>
             Follow
+        </button>
         {/if}
-    </button>
+    
 </div>
