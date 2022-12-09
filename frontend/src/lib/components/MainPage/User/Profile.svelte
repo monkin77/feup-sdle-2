@@ -7,11 +7,11 @@
     export let username;
 
     const logout = async () => {
-        const {res} = await logoutRequest();
+        const {res, body} = await logoutRequest();
         if (res.ok) {
             isLoggedIn.set(false);
         }
-        console.log(res);
+        console.log(body);
     }
 </script>
 

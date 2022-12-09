@@ -72,4 +72,17 @@ export const unfollowRequest = async (username) => {
     const body = await res.json();
 
     return {res, body};
-}
+};
+
+export const postRequest = async (text) => {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/posts/new`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({text})
+    });
+    const body = await res.json();
+
+    return {res, body};
+};

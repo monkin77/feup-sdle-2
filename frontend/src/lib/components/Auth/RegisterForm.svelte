@@ -10,14 +10,14 @@
     const data = {};
 
     const register = async () => {
-        const {res} = await registerRequest(data.username, data.password);
-        console.log(res);
+        const {res, body} = await registerRequest(data.username, data.password);
+        console.log(body);
 
-        const {res: res2} = await loginRequest(data.username, data.password);
+        const {res: res2, body: body2} = await loginRequest(data.username, data.password);
         if (res2.ok) {
             isLoggedIn.set(true);
         }
-        console.log(res2);
+        console.log(body2);
     }
 </script>
 

@@ -1,7 +1,13 @@
 <script>
+	import { postRequest } from "../../../requests";
 	import Button from "../../Form/Button.svelte";
 
     let text;
+
+    async function post() {
+        const {res, body} = await postRequest(text);
+        console.log(body);
+    }
 </script>
 
 <textarea
@@ -11,5 +17,5 @@
 />
 
 <div class="self-end">
-    <Button buttonText="Poop!" action={() => console.log("posted!")} />
+    <Button buttonText="Poop!" action={post} />
 </div>
