@@ -1,12 +1,15 @@
-import { isLoggedIn, timeline } from "../lib/stores";
-import { checkAuthRequest, getInfoRequest, getTimelineRequest } from "../lib/requests";
+import { redirect } from '@sveltejs/kit';
+import { isLoggedIn, timeline } from "$lib/stores";
+import { checkAuthRequest, getInfoRequest, getTimelineRequest } from "$lib/requests";
 
 export async function load() {
     const {res: resAuth, body: bodyAuth} = await checkAuthRequest();
     if (resAuth.ok) {
         isLoggedIn.set(bodyAuth.isLoggedIn);
     }
-    if (!bodyAuth.isLoggedIn) return {};
+    if (!bodyAuth.isLoggedIn) {
+        throw redirect(302, "/login");
+    }
 
     const {res: resInfo, body: userInfo} = await getInfoRequest(bodyAuth.username);
     if (!resInfo.ok) {

@@ -1,6 +1,6 @@
 <script>
-	import LoginForm from "../components/Auth/LoginForm.svelte";
-	import RegisterForm from "../components/Auth/RegisterForm.svelte";
+	import LoginForm from "$lib/components/Auth/LoginForm.svelte";
+	import RegisterForm from "$lib/components/Auth/RegisterForm.svelte";
 
     let registerSelected = false;
 </script>
