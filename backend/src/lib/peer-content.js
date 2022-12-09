@@ -2,7 +2,7 @@ import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import all from "it-all";
 import peer from "../models/Node.js";
-import { getUserData } from "./storage.js";
+import { getAllPosts, getUserData } from "./storage.js";
 
 /**
  * Get the content from the DHT
@@ -70,8 +70,8 @@ export const provideInfo = async(key) => {
 
     // Node register the retrieve function to be called when a peer request the content
     try {
-        node.fetchService.registerLookupFunction(`/${key}`, () => {
-            const info = peer.getInfo(key);
+        node.fetchService.registerLookupFunction(`/${key}`, async () => {
+            const info = await peer.getInfo(key);
             return new TextEncoder().encode(JSON.stringify(info));
         });
     } catch (err) {
@@ -167,11 +167,15 @@ const createCID = async(content) => {
  * Collect the posts of peer profiles object and merge them into a single array ordered by timestamp in reverse.
  * @returns {Array} All the posts of the own user and the users he is following ordered by timestamp in reverse.
  */
-export const mergePostsIntoTimeline = () => {
+export const mergePostsIntoTimeline = async () => {
     const timeline = [];
-    Object.values(peer.profiles).forEach(profile => {
-        timeline.push(...profile.posts);
+    const values = await getAllPosts(peer.username);
+
+    values.forEach(post => {
+        timeline.push(post);
     });
-    timeline.sort((a,b) => b.timestamp - a.timestamp);
+    timeline.sort((a, b) => b.timestamp - a.timestamp);
+    
+    console.log("Timeline: ", timeline);
     return timeline;
 };
