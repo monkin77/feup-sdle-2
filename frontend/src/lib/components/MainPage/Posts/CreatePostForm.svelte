@@ -1,5 +1,6 @@
 <script>
 	import { postRequest } from "../../../requests";
+	import { timeline } from "../../../stores";
 	import Button from "../../Form/Button.svelte";
 
     let text;
@@ -7,6 +8,10 @@
     async function post() {
         const {res, body} = await postRequest(text);
         console.log(body);
+
+        if (res.ok) {
+            timeline.update((posts) => [body, ...posts]);
+        }
     }
 </script>
 

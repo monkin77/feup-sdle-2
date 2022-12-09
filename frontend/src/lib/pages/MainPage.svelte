@@ -11,7 +11,7 @@ import RecommendedColumn from "../components/MainPage/RecommendedColumn.svelte";
         <UserColumn username={data.username} following={data.following} />
     </div>
     <div class="col-span-2 w-full">
-        <FeedColumn timeline={data.timeline} />
+        <FeedColumn />
     </div>
     <div class="col-span-1 w-full">
         <RecommendedColumn recommendedFollowers={data.followers} />

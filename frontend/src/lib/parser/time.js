@@ -1,4 +1,5 @@
-const MS_PER_MINUTE = 60 * 1000;
+const MS_PER_SECOND = 1000;
+const MS_PER_MINUTE = 60 * MS_PER_SECOND;
 const MS_PER_HOUR = MS_PER_MINUTE * 60;
 const MS_PER_DAY = MS_PER_HOUR * 24;
 const MS_PER_MONTH = MS_PER_DAY * 30;
@@ -6,8 +7,12 @@ const MS_PER_YEAR = MS_PER_DAY * 365;
 
 export const timeAgo = (timestamp) => {
     const elapsed = Date.now() - timestamp;
+    console.log(elapsed);
 
-    if (elapsed < MS_PER_MINUTE) {
+    if (elapsed < MS_PER_SECOND) {
+        return "just now";
+    }
+    else if (elapsed < MS_PER_MINUTE) {
         const seconds = Math.round(elapsed / 1000);
         if (seconds === 1) {
             return `${seconds} second ago`;

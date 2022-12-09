@@ -1,4 +1,4 @@
-import { isLoggedIn } from "../lib/stores"
+import { isLoggedIn, timeline } from "../lib/stores";
 import { checkAuthRequest } from "../lib/requests";
 
 export async function load() {
@@ -7,7 +7,7 @@ export async function load() {
         isLoggedIn.set(body.isLoggedIn);
     }
 
-    return {
+    const userInfo = {
         username: "BroZendo",
         followers: ["Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes"],
         following: ["Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes", "Monkerino", "PitRui", "Henry Nunes"],
@@ -89,4 +89,12 @@ export async function load() {
             }
         ]
     }
+
+    timeline.set(userInfo.timeline);
+
+    return {
+        username: userInfo.username,
+        followers: userInfo.followers,
+        following: userInfo.following,
+    };
 }
