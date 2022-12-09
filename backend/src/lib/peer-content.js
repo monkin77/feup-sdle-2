@@ -128,9 +128,7 @@ export const collectInfo = async(key) => {
     // Try get local info
     const username = peer.username;
 
-    console.log(`Trying to get info locally for ${key} on folder ./storage/${username}`);
     const {data, error : readError} = await getUserData(username, key);
-    console.log("data", data, "error", readError);
 
     if (!readError) {
         return data;

@@ -9,6 +9,7 @@ import { kadDHT } from "@libp2p/kad-dht";
 import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
+import { saveUserData } from "../lib/storage.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -98,7 +99,7 @@ class Node {
                     this.profiles[username].removeFollowers(dataUsername);
                 else if (variant === "unfollowed")
                     this.profiles[username].removeFollowing(dataUsername);
-                else 
+                else
                     throw new Error("Topic not implemented");
             }
         );
@@ -174,6 +175,7 @@ class Node {
         this.username = username;
         const collectedInfo = await collectInfo(this.username);
         if (collectedInfo) {
+            // TODO remove profiles and just use of this one
             this.profiles[this.username] = new Info(collectedInfo);
             console.log("Recovered account info: ", this.info());
         }
@@ -186,6 +188,7 @@ class Node {
         // Re-write the password so the new nodes have them in their DHT
         await putContent(this.node, `/${username}`, hashedPassword);
 
+        // Subscribe to the user's topics
         this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.username}-wasFollowed`);
         this.node.pubsub.subscribe(`/${this.username}-wasUnfollowed`);
@@ -198,7 +201,7 @@ class Node {
             const followUserInfo = await collectInfo(user);
             if (followUserInfo == null) return;
 
-            this.setInfo(user, followUserInfo);
+            await this.setInfo(user, followUserInfo);
             await provideInfo(user);
 
             this.node.pubsub.subscribe(`/${user}`);
@@ -208,7 +211,8 @@ class Node {
             this.node.pubsub.subscribe(`/${user}-unfollowed`);
         });
 
-        
+        // TODO: change this this.info() to this.profile after we remove profiles.
+        await saveUserData(this.username, this.username, this.info().toJson());
     }
 
     /**
@@ -242,6 +246,8 @@ class Node {
         await publishMessage(this.node, `/${followUsername}-wasFollowed`, this.username);
         await publishMessage(this.node, `/${this.username}-followed`, followUsername);
 
+        // TODO: Write to local storage the information of the user (probably in the handlers of the topics)
+
         return true;
     }
 
@@ -263,6 +269,8 @@ class Node {
 
         await publishMessage(this.node, `/${unfollowUsername}-wasUnfollowed`, this.username);
         await publishMessage(this.node, `/${this.username}-unfollowed`, unfollowUsername);
+        
+        // TODO: Write to local storage the information of the user (probably in the handlers of the topics)
     }
 
     /**
@@ -280,6 +288,8 @@ class Node {
         this.info().addPost(post);
         
         await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
+        
+        // TODO: Write to local storage the information of the user (probably in the handlers of the topics)
 
         return post;
     }
@@ -308,6 +318,7 @@ class Node {
         if (this.profiles[username]) {
             return this.profiles[username].toJson();
         }
+
         return {};
     }
 
@@ -315,7 +326,12 @@ class Node {
      * @param {string} username 
      * @param {object} info Json object with the user's information.
      */
-    setInfo(username, info) {
+    async setInfo(username, info) {
+        // TODO: Write to local storage the information of the user (check if would be nice in setInfo function)
+        await saveUserData(this.username, username, info);
+        
+        // TODO remove profiles of other people -> now it will be just profile instead of profiles
+        // remove the set info and write the info to files
         this.profiles[username] = new Info(info);
     }
 

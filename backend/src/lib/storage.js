@@ -1,6 +1,6 @@
 import fs from "fs";
 
-const STORAGE_PATH = "./storage";
+const STORAGE_PATH = "../storage";
 
 /**
  * Store a user's data into the folder of the logged in user 
@@ -8,16 +8,19 @@ const STORAGE_PATH = "./storage";
  * @param {string} fileUsername username of the user that is being saved
  * @param {*} data data to be stored in JSON format 
  */
-export const saveUserData = async  (loggedUsername, fileUsername, data) => {
+export const saveUserData = async (loggedUsername, fileUsername, data) => {
     const jsonData = JSON.stringify(data);
-    const path = `${STORAGE_PATH}/${loggedUsername}/${fileUsername}.json`;
+    const folderPath = `${STORAGE_PATH}/${loggedUsername}`;
+    const path = `${folderPath}/${fileUsername}.json`;
 
-    fs.mkdir(path, { recursive: true }, (err) => {
+    fs.mkdir(folderPath, { recursive: true }, (err) => {
         if (err) {
             console.log(`Error writing to file at path ${path}`);
             return;
         }
-        fs.writeFile(path, jsonData);
+        fs.writeFile(path, jsonData, () => {
+            console.log(`Data ${jsonData} saved to file at path ${path}`);
+        });
     });
 };
 
