@@ -3,7 +3,7 @@
     import Form from "../Form/Form.svelte";
 	import AuthModal from "./AuthModal.svelte";
 	import { loginRequest, registerRequest } from "../../requests";
-	import { isLoggedIn } from "../../stores";
+	import { goto } from "$app/navigation";
 
     export let secondaryAction;
 
@@ -12,10 +12,13 @@
     const register = async () => {
         const {res, body} = await registerRequest(data.username, data.password);
         console.log(body);
+        if (!res.ok) {
+            return;
+        }
 
         const {res: res2, body: body2} = await loginRequest(data.username, data.password);
         if (res2.ok) {
-            isLoggedIn.set(true);
+            goto("/");
         }
         console.log(body2);
     }

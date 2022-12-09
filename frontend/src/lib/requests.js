@@ -14,6 +14,7 @@ export const loginRequest = async (username, password) => {
 };
 
 export const registerRequest = async (username, password) => {
+    console.log("registerRequest", username, password);
     const res = await fetch(PUBLIC_BACKEND_URL + "/auth/register", {
         method: "POST",
         headers: {

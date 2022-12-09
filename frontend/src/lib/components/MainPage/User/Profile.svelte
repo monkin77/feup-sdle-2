@@ -1,15 +1,15 @@
 <script>
     import Icon from '@iconify/svelte';
-	import { isLoggedIn } from '../../../stores';
     import avatar from "./avatar.svg";
 	import { logoutRequest } from '../../../requests';
+	import { goto } from '$app/navigation';
 
     export let username;
 
     const logout = async () => {
         const {res, body} = await logoutRequest();
         if (res.ok) {
-            isLoggedIn.set(false);
+            goto("/login");
         }
         console.log(body);
     }

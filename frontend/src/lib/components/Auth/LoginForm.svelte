@@ -1,8 +1,8 @@
 <script>
+    import { goto } from '$app/navigation';
 	import Form from "../Form/Form.svelte";
     import FormField from "../Form/FormField.svelte";
     import AuthModal from "./AuthModal.svelte";
-	import { isLoggedIn } from "../../stores";
     import { loginRequest } from "../../requests";
 
     export let secondaryAction;
@@ -12,7 +12,7 @@
     const login = async () => {
         const {res, body} = await loginRequest(data.username, data.password);
         if (res.ok) {
-            isLoggedIn.set(true);
+            goto("/");
         }
         console.log(body);
     }
