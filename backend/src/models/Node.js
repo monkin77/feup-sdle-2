@@ -9,7 +9,7 @@ import { kadDHT } from "@libp2p/kad-dht";
 import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
-import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, garbageCollectFile, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
+import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
 import { buildStatusRes } from "../lib/utils.js";
 
 

@@ -1,7 +1,7 @@
 import fs from "fs";
 import peer from "../models/Node.js";
 import { buildStatusRes } from "./utils.js";
-import { cloneDeep } from "lodash";
+import lodash from "lodash";
 
 const STORAGE_PATH = "../storage";
 const NUMBER_OF_POSTS_TO_KEEP = 100;
@@ -184,7 +184,7 @@ export const getAllPosts = async() => {
             console.log(`Failed to retrieve posts from user ${fileName}. Error: ${error}`);
             continue;
         }
-        posts.push(...data.posts);
+        posts.push(data.posts);
     }
 
     return posts;
@@ -213,7 +213,7 @@ export const garbageCollect = async() => {
         const currTime = Date.now();
 
         // CloneDeep utility function is used to avoid mutating the original data even in nested structures
-        const newPosts = cloneDeep(data.posts);
+        const newPosts = lodash.cloneDeep(data.posts);
 
         // sort posts by timestamps in ascending order
         newPosts.sort((a, b) => a.timestamp - b.timestamp);
@@ -229,35 +229,12 @@ export const garbageCollect = async() => {
             }
         }
 
-        if (newPosts.length !== data.posts.length) {
+        const deletedPostsNum = data.posts.length - newPosts.length;
+        if (deletedPostsNum > 0) {
             data.posts = newPosts;
             await saveUserData(fileName, data);
-        }
-    }
-};
 
-
-/**
- * Garbage collects a user's posts if they have more than 100 posts
- * @param {*} fileUsername name of the user to garbage collect
- */
-export const garbageCollectFile = async(fileUsername) => {
-    const { error, data } = await getUserData(fileUsername);
-
-    if (error) {
-        console.log(`Error reading user data so we can't garbage collect: ${error}`);
-        return;
-    } else {
-        const newPosts = [...data.posts];
-        newPosts.sort((a, b) => a.timestamp - b.timestamp);
-
-        if (newPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
-            newPosts.splice(0, newPosts.length - NUMBER_OF_POSTS_TO_KEEP);
-        }
-
-        if (newPosts.length !== data.posts.length) {
-            data.posts = newPosts;
-            await saveUserData(fileUsername, data);
+            console.log(`[Garbage Collection Time Limit] user: ${fileName} numberPosts: ${deletedPostsNum}`);
         }
     }
 };
@@ -276,5 +253,6 @@ export const addPostAndGarbageCollect = async(prevPosts, newPost) => {
         const minPost = prevPosts.reduce((min, currPost) => (currPost.timestamp < min.timestamp ? currPost : min));
         const minIdx = prevPosts.indexOf(minPost);
         prevPosts.splice(minIdx, 1);
+        console.log("[Garbage Collection Posts Limit] post:", minPost);
     }
 };

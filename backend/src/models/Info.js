@@ -1,4 +1,4 @@
-import { addPostAndGarbageCollect } from "../lib/storage";
+import { addPostAndGarbageCollect } from "../lib/storage.js";
 
 export class Info {
     constructor(info) {
