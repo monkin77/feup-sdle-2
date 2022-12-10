@@ -1,6 +1,7 @@
 import fs from "fs";
 import peer from "../models/Node.js";
 import { buildStatusRes } from "./utils.js";
+import { cloneDeep } from "lodash";
 
 const STORAGE_PATH = "../storage";
 const NUMBER_OF_POSTS_TO_KEEP = 100;
@@ -11,7 +12,7 @@ const ONE_DAY_TIMESTAMP = 86400000;
  * @param {string} fileUsername username of the user that is being saved
  * @param {*} data data to be stored in JSON format 
  */
-export const saveUserData = async (fileUsername, data) => {
+export const saveUserData = async(fileUsername, data) => {
     const loggedUsername = peer.username;
     const jsonData = JSON.stringify(data);
     const folderPath = `${STORAGE_PATH}/${loggedUsername}`;
@@ -34,7 +35,7 @@ export const saveUserData = async (fileUsername, data) => {
  * @param {string} fileUsername username of the user that is being saved
  * @returns {Dict} {error: error, data: data} If error is different from null, read operation failed. Data -> Dict with user info
  */
-export const getUserData = async (fileUsername) => {
+export const getUserData = async(fileUsername) => {
     const loggedUsername = peer.username;
     const path = `${STORAGE_PATH}/${loggedUsername}/${fileUsername}.json`;
 
@@ -75,7 +76,7 @@ export const deleteUserData = (fileUsername) => {
  * @param {string} fileUsername username of user that posted the post
  * @param {string} post post to be added
  */
-export const addPost = async (fileUsername, post) => {
+export const addPost = async(fileUsername, post) => {
     const { data, error } = await getUserData(fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't add a Post: ${error}`);
@@ -93,7 +94,7 @@ export const addPost = async (fileUsername, post) => {
  * @param {*} follower username of user that followed the user
  * @returns {Dict} {err: error, data: data} If error is different from null, add follower operation failed
  */
-export const addFollower = async (fileUsername, follower) => {
+export const addFollower = async(fileUsername, follower) => {
     const { data, error } = await getUserData(fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't add a follower: ${error}`);
@@ -111,7 +112,7 @@ export const addFollower = async (fileUsername, follower) => {
  * @param {string} fileUsername username of user that started following
  * @param {*} following username of user that was followed
  */
-export const addFollowing = async (fileUsername, following) => {
+export const addFollowing = async(fileUsername, following) => {
     const { data, error } = await getUserData(fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't add a following: ${error}`);
@@ -128,7 +129,7 @@ export const addFollowing = async (fileUsername, following) => {
  * @param {*} fileUsername username of user that lost a follower
  * @param {*} follower username of user that unfollowed the user
  */
-export const removeFollower = async (fileUsername, follower) => {
+export const removeFollower = async(fileUsername, follower) => {
     const { data, error } = await getUserData(fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't remove a follower: ${error}`);
@@ -167,7 +168,7 @@ export const removeFollowing = async(fileUsername, following) => {
 /**
  * @returns {dict[]} Array of posts
  */
-export const getAllPosts = async () => {
+export const getAllPosts = async() => {
     const loggedUsername = peer.username;
     const path = `${STORAGE_PATH}/${loggedUsername}`;
     const posts = [];
@@ -193,9 +194,8 @@ export const getAllPosts = async () => {
 
 /**
  * Function that deletes posts that are older than 1 day (ONE_DAY_TIMESTAMP)
- * or the last posts if the user has more than 100 (NUMBER_OF_POSTS_TO_KEEP) posts
  */
-export const garbageCollect = async () => {
+export const garbageCollect = async() => {
     const loggedUsername = peer.username;
     const path = `${STORAGE_PATH}/${loggedUsername}`;
     const files = await fs.promises.readdir(path);
@@ -211,16 +211,21 @@ export const garbageCollect = async () => {
         }
 
         const currTime = Date.now();
-        const newPosts = [...data.posts];
+
+        // CloneDeep utility function is used to avoid mutating the original data even in nested structures
+        const newPosts = cloneDeep(data.posts);
+
+        // sort posts by timestamps in ascending order
         newPosts.sort((a, b) => a.timestamp - b.timestamp);
 
         // remove posts that are older than 1 day
         for (let j = 0; j < newPosts.length; j++) {
-            const post = newPosts[j];
-            const postTime = post.timestamp;
+            const postTime = newPosts[j].timestamp;
             if (currTime - postTime > ONE_DAY_TIMESTAMP) {
                 newPosts.splice(j, 1);
                 j--;
+            } else {
+                break; //  Since posts are sorted by timestamp, we can stop once we find a post that is not old
             }
         }
 
@@ -236,9 +241,9 @@ export const garbageCollect = async () => {
  * Garbage collects a user's posts if they have more than 100 posts
  * @param {*} fileUsername name of the user to garbage collect
  */
-export const garbageCollectFile = async (fileUsername) => {
+export const garbageCollectFile = async(fileUsername) => {
     const { error, data } = await getUserData(fileUsername);
-    
+
     if (error) {
         console.log(`Error reading user data so we can't garbage collect: ${error}`);
         return;
