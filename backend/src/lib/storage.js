@@ -75,17 +75,19 @@ export const deleteUserData = (fileUsername) => {
  * Adds a post to the user's posts list. If posts length is > NUMBER_OF_POSTS_TO_KEEP the oldest post is removed.
  * @param {string} fileUsername username of user that posted the post
  * @param {string} post post to be added
+ * @return true if post was added, false otherwise
  */
 export const addPost = async(fileUsername, post) => {
     const { data, error } = await getUserData(fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't add a Post: ${error}`);
-        return;
+        return false;
     }
 
     addPostAndGarbageCollect(data.posts, post);
 
     await saveUserData(fileUsername, data);
+    return true;
 };
 
 /**

@@ -12,6 +12,7 @@ import { Info } from "../models/Info.js";
 import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
 import { buildStatusRes, parseError } from "../lib/utils.js";
 import { mdns } from "@libp2p/mdns";
+import { sendSseResponse } from "../lib/sse.js";
 
 
 const GARBAGE_COLLECT_INTERVAL = 1000 * 60 * 60; // 1 hour
@@ -75,7 +76,13 @@ class Node {
             topic => this.profile.hasFollowing(topic.substring(1)),
             async(data, evt) => {
                 const username = evt.detail.topic.substring(1);
-                await addPost(username, JSON.parse(data));
+
+                const newPostStatus = await addPost(username, JSON.parse(data));
+
+                if (newPostStatus && (this.sseResponse != null)) {
+                    // Notify the web app that a new post arrived
+                    sendSseResponse(this.sseResponse, data);
+                }
             }
         );
 
@@ -330,6 +337,15 @@ class Node {
         this.profile = null;
         this.loggedIn = false;
         this.username = "";
+        this.sseResponse = null; // Response object to send SSE messages
+    }
+
+    /**
+     * Sets the sseResponse property when a new SSE connection is established by the web client.
+     * @param {*} response 
+     */
+    setSSEResponse(response) {
+        this.sseResponse = response;
     }
 
     getNode() {
