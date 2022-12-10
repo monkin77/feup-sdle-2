@@ -1,3 +1,5 @@
+import { addPostAndGarbageCollect } from "../lib/storage";
+
 export class Info {
     constructor(info) {
         if (info) {
@@ -45,8 +47,12 @@ export class Info {
         return this.followers.has(username);
     }
 
+    /**
+     * Adds a new post to the user's info. If posts length is > NUMBER_OF_POSTS_TO_KEEP the oldest post is removed.
+     * @param {*} post 
+     */
     addPost(post) {
-        this.posts.push(post);
+        addPostAndGarbageCollect(this.posts, post);
     }
 
     /**

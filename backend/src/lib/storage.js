@@ -72,7 +72,7 @@ export const deleteUserData = (fileUsername) => {
 
 
 /**
- * Adds a post to the user's posts list
+ * Adds a post to the user's posts list. If posts length is > NUMBER_OF_POSTS_TO_KEEP the oldest post is removed.
  * @param {string} fileUsername username of user that posted the post
  * @param {string} post post to be added
  */
@@ -83,7 +83,7 @@ export const addPost = async(fileUsername, post) => {
         return;
     }
 
-    data.posts.push(post);
+    addPostAndGarbageCollect(data.posts, post);
 
     await saveUserData(fileUsername, data);
 };
@@ -260,5 +260,21 @@ export const garbageCollectFile = async(fileUsername) => {
             await saveUserData(fileUsername, data);
         }
     }
+};
 
+/**
+ * Adds a new post to the the previous posts list and removes the older post if the list surpasses the limit
+ * Changes are made by reference. The prevPosts list is mutated.
+ * @param {*} prevPosts 
+ * @param {*} newPost 
+ */
+export const addPostAndGarbageCollect = async(prevPosts, newPost) => {
+    prevPosts.push(newPost);
+
+    if (prevPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
+        // Find oldest post and remove it
+        const minPost = prevPosts.reduce((min, currPost) => (currPost.timestamp < min.timestamp ? currPost : min));
+        const minIdx = prevPosts.indexOf(minPost);
+        prevPosts.splice(minIdx, 1);
+    }
 };

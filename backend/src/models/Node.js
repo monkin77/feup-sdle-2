@@ -72,7 +72,6 @@ class Node {
             async(data, evt) => {
                 const username = evt.detail.topic.substring(1);
                 await addPost(username, JSON.parse(data));
-                await garbageCollectFile(username);
             }
         );
 
@@ -299,7 +298,7 @@ class Node {
     }
 
     /**
-     * Function to post a message.
+     * Function to add a new post
      * @param {*} text Post content message
      * @returns New created post.
      */
@@ -313,7 +312,6 @@ class Node {
         this.profile.addPost(post);
         await saveUserData(this.username, this.profile.toDict());
 
-        await garbageCollectFile(this.username);
         await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
         return post;
