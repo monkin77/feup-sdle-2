@@ -126,15 +126,9 @@ export const collectInfo = async(key) => {
     }
 
     // Try get local info
-    const username = peer.username;
-
-    const {data, error : readError} = await getUserData(username, key);
-
-    if (!readError) {
-        return data;
-    }
-
-    return null;
+    const {data, error} = await getUserData(peer.username, key);
+    
+    return error ? null : data;
 };
 
 /**
