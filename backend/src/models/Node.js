@@ -97,14 +97,22 @@ class Node {
             async(dataUsername, evt) => {
                 const topic = evt.detail.topic;
                 const username = topic.substring(1, topic.length - `-${variant}`.length);
-                if (variant === "wasFollowed")
+                if (variant === "wasFollowed") {
+                    if (username === this.username) this.profile.addFollowers(dataUsername);
                     await addFollower(username, dataUsername);
-                else if (variant === "followed")
+                }
+                else if (variant === "followed") {
+                    if (username === this.username) this.profile.addFollowing(dataUsername);
                     await addFollowing(username, dataUsername);
-                else if (variant === "wasUnfollowed")
+                }
+                else if (variant === "wasUnfollowed") {
+                    if (username === this.username) this.profile.removeFollowers(dataUsername);
                     await removeFollower(username, dataUsername);
-                else if (variant === "unfollowed")
+                }
+                else if (variant === "unfollowed") {
+                    if (username === this.username) this.profile.removeFollowing(dataUsername);
                     await removeFollowing(username, dataUsername);
+                }
                 else
                     throw new Error("Topic not implemented");
             }
