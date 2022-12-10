@@ -1,6 +1,19 @@
 <script>
+	import FeedColumn from "$lib/components/MainPage/FeedColumn.svelte";
+    import RecommendedColumn from "$lib/components/MainPage/RecommendedColumn.svelte";
+    import UserColumn from "$lib/components/MainPage/UserColumn.svelte";
+
     export let data;
 </script>
 
-<h1>{ data.message }</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<div class="grid grid-cols-4 gap-10 justify-items-center h-full">
+    <div class="col-span-1 w-full">
+        <UserColumn username={data.username} following={data.following} />
+    </div>
+    <div class="col-span-2 w-full">
+        <FeedColumn />
+    </div>
+    <div class="col-span-1 w-full">
+        <RecommendedColumn recommendedFollowers={data.followers} />
+    </div>
+</div>

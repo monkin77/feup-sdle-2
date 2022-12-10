@@ -359,6 +359,10 @@ class Node {
 
         return result;
     }
+
+    getUsername() {
+        return this.username;
+    }
 }
 
 const singletonNode = new Node();
