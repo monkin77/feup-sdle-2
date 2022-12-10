@@ -8,20 +8,20 @@ const STORAGE_PATH = "../storage";
  * @param {string} fileUsername username of the user that is being saved
  * @param {*} data data to be stored in JSON format 
  */
-export const saveUserData = async (loggedUsername, fileUsername, data) => {
+export const saveUserData = async(loggedUsername, fileUsername, data) => {
     const jsonData = JSON.stringify(data);
     const folderPath = `${STORAGE_PATH}/${loggedUsername}`;
     const path = `${folderPath}/${fileUsername}.json`;
 
-    fs.mkdir(folderPath, { recursive: true }, (err) => {
-        if (err) {
-            console.log(`Error writing to file at path ${path}`);
-            return;
-        }
-        fs.writeFile(path, jsonData, () => {
-            console.log(`Data ${jsonData} saved to file at path ${path}`);
-        });
-    });
+    // TODO: Check if there is any error handling to be done, such as retrying to save the data in case of specific errors?
+    try {
+        await fs.promises.mkdir(folderPath, { recursive: true });
+        await fs.promises.writeFile(path, jsonData);
+
+        console.log(`Data ${jsonData} saved to file at path ${path}`);
+    } catch (err) {
+        console.log(`Error saving user data at path ${path}: ${err}`);
+    }
 };
 
 /**
@@ -30,14 +30,18 @@ export const saveUserData = async (loggedUsername, fileUsername, data) => {
  * @param {string} fileUsername username of the user that is being saved
  * @returns {Dict} {err: error, data: data} If error is different from null, read operation failed
  */
-export const getUserData = async (loggedUsername, fileUsername) => {
+export const getUserData = async(loggedUsername, fileUsername) => {
+    // TODO: If the data to get is from the logged in user, could fetch it from the peer instead of reading from the file
+
     const path = `${STORAGE_PATH}/${loggedUsername}/${fileUsername}.json`;
 
     try {
-        let data = fs.readFileSync(path);
-        return {error: null, data: JSON.parse(data)};
+        // Reads file asynchronously 
+        const data = await fs.promises.readFile(path);
+
+        return { error: null, data: JSON.parse(data) };
     } catch (err) {
-        return {error: err, data: null};
+        return { error: err, data: null };
     }
 };
 
@@ -47,8 +51,10 @@ export const getUserData = async (loggedUsername, fileUsername) => {
  * @param {string} fileUsername username of the user that is being saved
  * @returns {Dict} {err: error, data: data} If error is different from null, delete operation failed
  */
-export const deleteUserData = async (loggedUsername, fileUsername) => {
+export const deleteUserData = (loggedUsername, fileUsername) => {
     const path = `${STORAGE_PATH}/${loggedUsername}/${fileUsername}.json`;
+
+    // TODO: Check if there is any way of retrying deletino upon failure
     // remove file
     fs.unlink(path, (err) => {
         if (err) {
@@ -65,9 +71,8 @@ export const deleteUserData = async (loggedUsername, fileUsername) => {
  * @param {string} loggedUsername logged user username
  * @param {string} fileUsername username of user that posted the post
  * @param {string} post post to be added
- * @returns {Dict} {err: error, data: data} If error is different from null, add post operation failed
  */
-export const addPost = async (loggedUsername, fileUsername, post) => {
+export const addPost = async(loggedUsername, fileUsername, post) => {
     const { data, error } = await getUserData(loggedUsername, fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't add a Post: ${error}`);
@@ -79,7 +84,7 @@ export const addPost = async (loggedUsername, fileUsername, post) => {
 
     await saveUserData(loggedUsername, fileUsername, data);
 };
-    
+
 /**
  * Adds a follower to the user's follower list
  * @param {string} loggedUsername logged user username
@@ -87,15 +92,15 @@ export const addPost = async (loggedUsername, fileUsername, post) => {
  * @param {*} follower username of user that followed the user
  * @returns {Dict} {err: error, data: data} If error is different from null, add follower operation failed
  */
-export const addFollower = async (loggedUsername, fileUsername, follower) => {
+export const addFollower = async(loggedUsername, fileUsername, follower) => {
     const { data, error } = await getUserData(loggedUsername, fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't add a follower: ${error}`);
         return;
     }
 
-    const followers = data.followers;
-    followers.push(follower);
+    const followersList = data.followers;
+    followersList.push(follower);
 
     await saveUserData(loggedUsername, fileUsername, data);
 };
@@ -106,17 +111,16 @@ export const addFollower = async (loggedUsername, fileUsername, follower) => {
  * @param {string} loggedUsername logged user username
  * @param {string} fileUsername username of user that started following
  * @param {*} following username of user that was followed
- * @returns {Dict} {err: error, data: data} If error is different from null, add following operation failed
- * */
-export const addFollowing = async (loggedUsername, fileUsername, following) => {
+ */
+export const addFollowing = async(loggedUsername, fileUsername, following) => {
     const { data, error } = await getUserData(loggedUsername, fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't add a following: ${error}`);
         return;
     }
 
-    const followings = data.following;
-    followings.push(following);
+    const followingList = data.following;
+    followingList.push(following);
 
     await saveUserData(loggedUsername, fileUsername, data);
 };
@@ -126,19 +130,18 @@ export const addFollowing = async (loggedUsername, fileUsername, following) => {
  * @param {*} loggedUsername logged user username
  * @param {*} fileUsername username of user that lost a follower
  * @param {*} follower username of user that unfollowed the user
- * @returns {Dict} {err: error, data: data} If error is different from null, remove follower operation failed
  */
-export const removeFollower = async (loggedUsername, fileUsername, follower) => {
+export const removeFollower = async(loggedUsername, fileUsername, follower) => {
     const { data, error } = await getUserData(loggedUsername, fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't remove a follower: ${error}`);
         return;
     }
 
-    const followers = data.followers;
-    const index = followers.indexOf(follower);
+    const followersList = data.followers;
+    const index = followersList.indexOf(follower);
     if (index > -1) {
-        followers.splice(index, 1);
+        followersList.splice(index, 1);
     }
 
     await saveUserData(loggedUsername, fileUsername, data);
@@ -150,25 +153,24 @@ export const removeFollower = async (loggedUsername, fileUsername, follower) => 
  * @param {*} loggedUsername logged user username
  * @param {*} fileUsername username of user that stopped following
  * @param {*} following username of user that was unfollowed
- * @returns 
  */
-export const removeFollowing = async (loggedUsername, fileUsername, following) => {
+export const removeFollowing = async(loggedUsername, fileUsername, following) => {
     const { data, error } = await getUserData(loggedUsername, fileUsername);
     if (error) {
         console.log(`Error reading user data so we can't remove a following: ${error}`);
         return;
     }
 
-    const followings = data.following;
-    const index = followings.indexOf(following);
+    const followingList = data.following;
+    const index = followingList.indexOf(following);
     if (index > -1) {
-        followings.splice(index, 1);
+        followingList.splice(index, 1);
     }
 
     await saveUserData(loggedUsername, fileUsername, data);
 };
 
-export const getAllPosts = async (loggedUsername) => {
+export const getAllPosts = async(loggedUsername) => {
     const path = `${STORAGE_PATH}/${loggedUsername}`;
     const posts = [];
 
@@ -179,12 +181,12 @@ export const getAllPosts = async (loggedUsername) => {
         const fileName = file.replace(".json", "");
         const { data, error } = await getUserData(loggedUsername, fileName);
         if (error) {
-            console.log(`Error reading user data so we can't get all posts: ${error}`);
-            return;
+            // if we can't read a user's data, we just skip the posts from that user
+            console.log(`Failed to retrieve posts from user ${fileName}. Error: ${error}`);
+            continue;
         }
         posts.push(...data.posts);
     }
 
     return posts;
 };
-

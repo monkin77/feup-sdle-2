@@ -70,7 +70,7 @@ export const provideInfo = async(key) => {
 
     // Node register the retrieve function to be called when a peer request the content
     try {
-        node.fetchService.registerLookupFunction(`/${key}`, async () => {
+        node.fetchService.registerLookupFunction(`/${key}`, async() => {
             const info = await peer.getInfo(key);
             return new TextEncoder().encode(JSON.stringify(info));
         });
@@ -167,7 +167,7 @@ const createCID = async(content) => {
  * Collect the posts of peer profiles object and merge them into a single array ordered by timestamp in reverse.
  * @returns {Array} All the posts of the own user and the users he is following ordered by timestamp in reverse.
  */
-export const mergePostsIntoTimeline = async () => {
+export const mergePostsIntoTimeline = async() => {
     const timeline = [];
     const values = await getAllPosts(peer.username);
 
@@ -175,7 +175,7 @@ export const mergePostsIntoTimeline = async () => {
         timeline.push(post);
     });
     timeline.sort((a, b) => b.timestamp - a.timestamp);
-    
+
     console.log("Timeline: ", timeline);
     return timeline;
 };

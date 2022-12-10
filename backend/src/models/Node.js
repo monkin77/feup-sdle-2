@@ -60,7 +60,7 @@ class Node {
         // New post from a followed user
         this.subscribeTopic(
             topic => this.profile.hasFollowing(topic.substring(1)),
-            async (data, evt) => {
+            async(data, evt) => {
                 const username = evt.detail.topic.substring(1);
                 await addPost(this.username, username, JSON.parse(data));
             }
@@ -89,10 +89,10 @@ class Node {
                 const username = topic.substring(1, topic.length - `-${variant}`.length);
                 return username === this.username || this.profile.hasFollowing(username);
             },
-            async (dataUsername, evt) => {
+            async(dataUsername, evt) => {
                 const topic = evt.detail.topic;
                 const username = topic.substring(1, topic.length - `-${variant}`.length);
-                if (variant === "wasFollowed") 
+                if (variant === "wasFollowed")
                     await addFollower(this.username, username, dataUsername);
                 else if (variant === "followed")
                     await addFollowing(this.username, username, dataUsername);
@@ -178,10 +178,9 @@ class Node {
         if (collectedInfo) {
             this.profile = new Info(collectedInfo);
             console.log("Recovered account info: ", this.profile);
-        }
-        else {
+        } else {
             this.profile = new Info();
-            console.log("Account's info not found. Inserting new info"); 
+            console.log("Account's info not found. Inserting new info");
         }
 
         // Re-write the password so the new nodes have them in their DHT
@@ -198,7 +197,7 @@ class Node {
 
         // Collect all following users info, provide it and subscribe to their topics
         const following = Array.from(this.profile.getFollowing());
-        following.forEach(async (user) => {
+        following.forEach(async(user) => {
             const followUserInfo = await collectInfo(user);
             if (followUserInfo == null) return;
 
@@ -260,7 +259,7 @@ class Node {
         this.node.pubsub.unsubscribe(`/${unfollowUsername}-wasUnfollowed`);
         this.node.pubsub.unsubscribe(`/${unfollowUsername}-followed`);
         this.node.pubsub.unsubscribe(`/${unfollowUsername}-unfollowed`);
-        
+
         unprovideInfo(this.node, unfollowUsername);
 
         this.profile.removeFollowing(unfollowUsername);
@@ -269,7 +268,7 @@ class Node {
         await publishMessage(this.node, `/${this.username}-unfollowed`, unfollowUsername);
 
         // remove the user from the local storage
-        await deleteUserData(this.username, unfollowUsername);
+        deleteUserData(this.username, unfollowUsername);
     }
 
     /**
