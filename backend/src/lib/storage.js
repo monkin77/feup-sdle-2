@@ -3,6 +3,8 @@ import peer from "../models/Node.js";
 import { buildStatusRes } from "./utils.js";
 
 const STORAGE_PATH = "../storage";
+const NUMBER_OF_POSTS_TO_KEEP = 100;
+const ONE_DAY_TIMESTAMP = 86400000;
 
 /**
  * Store a user's data into the folder of the logged in user 
@@ -186,3 +188,50 @@ export const getAllPosts = async () => {
 
     return posts;
 };
+
+
+
+/**
+ * Function that deletes posts that are older than 1 day (ONE_DAY_TIMESTAMP)
+ * or the last posts if the user has more than 100 (NUMBER_OF_POSTS_TO_KEEP) posts
+ */
+export const garbageCollect = async () => {
+    const loggedUsername = peer.username;
+    const path = `${STORAGE_PATH}/${loggedUsername}`;
+    const files = await fs.promises.readdir(path);
+
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const fileName = file.replace(".json", "");
+        const { data, error } = await getUserData(fileName);
+        if (error) {
+            // if we can't read a user's data, we just skip the posts from that user
+            console.log(`Failed to get posts from user ${fileName}. Error: ${error}`);
+            continue;
+        }
+
+        const currTime = Date.now();
+        const newPosts = [...data.posts];
+
+        // remove posts that are older than 1 day
+        for (let j = 0; j < newPosts.length; j++) {
+            const post = newPosts[j];
+            const postTime = post.timestamp;
+            if (currTime - postTime > ONE_DAY_TIMESTAMP) {
+                newPosts.splice(j, 1);
+                j--;
+            }
+        }
+
+        // remove last posts if more than 100
+        if (newPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
+            newPosts.splice(0, newPosts.length - NUMBER_OF_POSTS_TO_KEEP);
+        }
+
+        if (newPosts.length !== data.posts.length) {
+            data.posts = newPosts;
+            await saveUserData(fileName, data);
+        }
+    }
+};
+

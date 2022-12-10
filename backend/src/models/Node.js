@@ -9,8 +9,11 @@ import { kadDHT } from "@libp2p/kad-dht";
 import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
-import { addFollower, addFollowing, addPost, deleteUserData, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
+import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
 import { buildStatusRes } from "../lib/utils.js";
+
+
+const INTERVAL_TIME = 1000; // 1 second
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -41,6 +44,7 @@ const getNodeOptions = () => {
 };
 
 class Node {
+
     constructor() {
         /**
          * Array of objects containing information about subscribed topics: conditions and actions.
@@ -190,6 +194,10 @@ class Node {
         }
 
         this.loggedIn = true;
+        // This should be always null on this point but we do it just in case
+        if (!this.garbageInterval) 
+            this.garbageInterval = setInterval(garbageCollect, INTERVAL_TIME);
+
 
         // Re-write the password so the new nodes have them in their DHT
         await putContent(this.node, `/${this.username}`, hashedPassword);
@@ -227,6 +235,10 @@ class Node {
     async logout() {
         this.unsubscribeAll();
         this.resetInfo();
+
+        // clear garbage collect interval
+        clearInterval(this.garbageInterval);
+        this.garbageInterval = null;
     }
 
     /**
