@@ -184,7 +184,7 @@ export const getAllPosts = async() => {
             console.log(`Failed to retrieve posts from user ${fileName}. Error: ${error}`);
             continue;
         }
-        posts.push(data.posts);
+        posts.push(...data.posts);
     }
 
     return posts;
