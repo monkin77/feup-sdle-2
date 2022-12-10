@@ -201,7 +201,7 @@ export const findRecommendedUsers = async () => {
         }
     }
     recommendedUsers = [...new Set(recommendedUsers)];
-    recommendedUsers = recommendedUsers.filter(user => !following.has(user));
+    recommendedUsers = recommendedUsers.filter(user => user != peer.username && !following.has(user));
     return recommendedUsers;
 };
 
