@@ -194,10 +194,8 @@ export const getAllPosts = async () => {
 /**
  * Function that deletes posts that are older than 1 day (ONE_DAY_TIMESTAMP)
  * or the last posts if the user has more than 100 (NUMBER_OF_POSTS_TO_KEEP) posts
- * @param {boolean} collectSize if true, we will delete the last posts if the user has more than 100 posts, 
- * otherwise we will delete posts older than 1 day
  */
-export const garbageCollect = async (collectSize) => {
+export const garbageCollect = async () => {
     const loggedUsername = peer.username;
     const path = `${STORAGE_PATH}/${loggedUsername}`;
     const files = await fs.promises.readdir(path);
@@ -216,24 +214,15 @@ export const garbageCollect = async (collectSize) => {
         const newPosts = [...data.posts];
         newPosts.sort((a, b) => a.timestamp - b.timestamp);
 
-        if (collectSize) {
-            // remove last posts if more than 100
-            if (newPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
-                newPosts.splice(0, newPosts.length - NUMBER_OF_POSTS_TO_KEEP);
+        // remove posts that are older than 1 day
+        for (let j = 0; j < newPosts.length; j++) {
+            const post = newPosts[j];
+            const postTime = post.timestamp;
+            if (currTime - postTime > ONE_DAY_TIMESTAMP) {
+                newPosts.splice(j, 1);
+                j--;
             }
-        } else {
-            // remove posts that are older than 1 day
-            for (let j = 0; j < newPosts.length; j++) {
-                const post = newPosts[j];
-                const postTime = post.timestamp;
-                if (currTime - postTime > ONE_DAY_TIMESTAMP) {
-                    newPosts.splice(j, 1);
-                    j--;
-                }
-            }
-
         }
-
 
         if (newPosts.length !== data.posts.length) {
             data.posts = newPosts;
@@ -242,3 +231,28 @@ export const garbageCollect = async (collectSize) => {
     }
 };
 
+
+/**
+ * Garbage collects a user's posts if they have more than 100 posts
+ * @param {*} fileUsername name of the user to garbage collect
+ */
+export const garbageCollectFile = async (fileUsername) => {
+    const { error, data } = await getUserData(fileUsername);
+    
+    if (error) {
+        console.log(`Error reading user data so we can't garbage collect: ${error}`);
+        return;
+    } else {
+        const newPosts = [...data.posts];
+        console.log("POSTS::S:S::S:S: ", newPosts);
+        if (newPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
+            newPosts.splice(0, newPosts.length - NUMBER_OF_POSTS_TO_KEEP);
+        }
+
+        if (newPosts.length !== data.posts.length) {
+            data.posts = newPosts;
+            await saveUserData(fileUsername, data);
+        }
+    }
+
+};
