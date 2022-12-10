@@ -120,7 +120,7 @@ export const collectInfo = async (key) => {
                 const infoReq = await node.fetch(provider.id, `/${key}`);
                 return JSON.parse(new TextDecoder().decode(infoReq));
             } catch (err) {
-                console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
+                // console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
             }
         }
     }
@@ -171,4 +171,29 @@ export const mergePostsIntoTimeline = async () => {
 
     console.log("Timeline: ", timeline);
     return timeline;
+};
+
+
+/**
+ * Find users that are beeing followed by the users that the own user is following and that does not follow already. Until 2 levels of depth.
+ * @returns {Array} Recommended users for the own user.
+ */
+export const findRecommendedUsers = async () => {
+    const profile = peer.profile;
+    let recommendedUsers = [];
+    const following = profile.getFollowing();
+    for (const user of following) {
+        const {error, data} = await collectInfo(user);
+        if (error) continue;
+        const followingFollowings = data.following;
+        recommendedUsers.push(...followingFollowings);
+        for (const subuser of followingFollowings) {
+            const {error, data} = await collectInfo(subuser);
+            if (error) continue;
+            recommendedUsers.push(...data.following);
+        }
+    }
+    recommendedUsers = [...new Set(recommendedUsers)];
+    recommendedUsers = recommendedUsers.filter(user => !following.has(user));
+    return recommendedUsers;
 };

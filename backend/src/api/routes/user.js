@@ -2,7 +2,7 @@ import node from "../../models/Node.js";
 import { Router } from "express";
 import { isLoggedIn } from "../middleware/authentication.js";
 import { canFollow, existingUser, isFollowing, isUser } from "../middleware/user.js";
-import { collectInfo, mergePostsIntoTimeline } from "../../lib/peer-content.js";
+import { collectInfo, findRecommendedUsers, mergePostsIntoTimeline } from "../../lib/peer-content.js";
 
 const router = Router();
 
@@ -11,6 +11,7 @@ export default (app) => {
 
     router.get("/:username/timeline", isLoggedIn, isUser, timelineHandler);
     router.get("/:username/info", isLoggedIn, existingUser, infoHandler);
+    router.get("/:username/recommended", isLoggedIn, existingUser, isUser, recommendedHandler);
     router.post("/:username/follow", isLoggedIn, existingUser, canFollow, followHandler);
     router.post("/:username/unfollow", isLoggedIn, existingUser, isFollowing, unfollowHandler);
 };
@@ -61,4 +62,15 @@ async function infoHandler(req, res) {
 async function timelineHandler(req, res) {
     const timeline = await mergePostsIntoTimeline();
     res.json(timeline);
+}
+
+/**
+ *  
+ * @param {*} req
+ * @param {*} res
+ */
+async function recommendedHandler(req, res) {
+    const username = req.params.username;
+    const recommended = await findRecommendedUsers(username);
+    res.json(recommended);
 }
