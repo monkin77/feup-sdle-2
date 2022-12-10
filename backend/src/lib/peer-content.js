@@ -2,7 +2,7 @@ import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import all from "it-all";
 import peer from "../models/Node.js";
-import { getAllPosts, getUserData } from "./storage.js";
+import { getAllPosts } from "./storage.js";
 
 /**
  * Get the content from the DHT
@@ -100,12 +100,12 @@ export const unprovideInfo = async(key) => {
  * Find the peers that provide the content for the given key.
  * Fetch the content from the first peer that provides it. // TODO: tweek this
  * If the content is not found, tries to get it locally.
- * If the content is not found locally, returns null.
+ * If the content is not found locally, returns error.
  * @param {Libp2p} node 
  * @param {string} key 
- * @returns {object} Dictionary with the content if found, null otherwise.
+ * @returns {Dict} {error: error, data: data} data -> Dictionary with user's info
  */
-export const collectInfo = async(key) => {
+export const collectInfo = async (key) => {
     const node = peer.node;
 
     const providers = await getPeerProviders(key);
@@ -117,18 +117,16 @@ export const collectInfo = async(key) => {
         // TODO: Check how info will be updated from the providers
         for (const provider of providers) {
             try {
-                let info = await node.fetch(provider.id, `/${key}`);
-                return JSON.parse(new TextDecoder().decode(info));
+                const infoReq = await node.fetch(provider.id, `/${key}`);
+                return JSON.parse(new TextDecoder().decode(infoReq));
             } catch (err) {
                 console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
             }
         }
     }
 
-    // Try get local info
-    const {data, error} = await getUserData(peer.username, key);
-    
-    return error ? null : data;
+    // Try to collect info from the local info in this node
+    return peer.getInfo(key);
 };
 
 /**
@@ -167,13 +165,8 @@ const createCID = async(content) => {
  * Collect the posts of peer profiles object and merge them into a single array ordered by timestamp in reverse.
  * @returns {Array} All the posts of the own user and the users he is following ordered by timestamp in reverse.
  */
-export const mergePostsIntoTimeline = async() => {
-    const timeline = [];
-    const values = await getAllPosts(peer.username);
-
-    values.forEach(post => {
-        timeline.push(post);
-    });
+export const mergePostsIntoTimeline = async () => {
+    const timeline = await getAllPosts();
     timeline.sort((a, b) => b.timestamp - a.timestamp);
 
     console.log("Timeline: ", timeline);

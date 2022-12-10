@@ -51,8 +51,9 @@ export class Info {
 
     /**
      * Followers and followig sets are converted to arrays.
+     * @returns Dictionary representing Info
      */
-    toJson() {
+    toDict() {
         return {
             followers: Array.from(this.followers),
             following: Array.from(this.following),
@@ -61,7 +62,7 @@ export class Info {
     }
 
     /**
-     * Followers and followig arrays are converted to sets.
+     * Followers and following arrays are converted to sets.
      */
     fromJson(json) {
         this.followers = new Set(json.followers);

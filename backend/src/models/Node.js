@@ -10,6 +10,7 @@ import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
 import { addFollower, addFollowing, addPost, deleteUserData, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
+import { buildStatusRes } from "../lib/utils.js";
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -21,7 +22,7 @@ const getNodeOptions = () => {
         transports: [tcp()],
         connectionEncryption: [noise()],
         streamMuxers: [mplex()],
-        pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: true }),
+        pubsub: gossipsub({ allowPublishToZeroPeers: true, emitSelf: false }),
         peerDiscovery: [
             bootstrap({
                 interval: 60e3,
@@ -47,9 +48,7 @@ class Node {
          * An action is the function to be called when the condition is met.
          */
         this.subscribedTopics = [];
-
-        // Store profile info of a node when it is logged in
-        this.profile = null;
+        this.resetInfo();
     }
 
 
@@ -68,7 +67,7 @@ class Node {
             topic => this.profile.hasFollowing(topic.substring(1)),
             async(data, evt) => {
                 const username = evt.detail.topic.substring(1);
-                await addPost(this.username, username, JSON.parse(data));
+                await addPost(username, JSON.parse(data));
             }
         );
 
@@ -99,13 +98,13 @@ class Node {
                 const topic = evt.detail.topic;
                 const username = topic.substring(1, topic.length - `-${variant}`.length);
                 if (variant === "wasFollowed")
-                    await addFollower(this.username, username, dataUsername);
+                    await addFollower(username, dataUsername);
                 else if (variant === "followed")
-                    await addFollowing(this.username, username, dataUsername);
+                    await addFollowing(username, dataUsername);
                 else if (variant === "wasUnfollowed")
-                    await removeFollower(this.username, username, dataUsername);
+                    await removeFollower(username, dataUsername);
                 else if (variant === "unfollowed")
-                    await removeFollowing(this.username, username, dataUsername);
+                    await removeFollowing(username, dataUsername);
                 else
                     throw new Error("Topic not implemented");
             }
@@ -175,13 +174,14 @@ class Node {
 
     /**
      * Logs in to an account.
-     * @param {*} username
+     * @param {*} username username in which we want to log in
      * @param {*} hashedPassword encrypted password
      */
     async login(username, hashedPassword) {
         this.username = username;
-        const collectedInfo = await collectInfo(this.username);
-        if (collectedInfo) {
+
+        const {error: collectErr, data: collectedInfo} = await collectInfo(username);
+        if (!collectErr) {
             this.profile = new Info(collectedInfo);
             console.log("Recovered account info: ", this.profile);
         } else {
@@ -189,25 +189,25 @@ class Node {
             console.log("Account's info not found. Inserting new info");
         }
 
+        this.loggedIn = true;
+
         // Re-write the password so the new nodes have them in their DHT
-        await putContent(this.node, `/${username}`, hashedPassword);
+        await putContent(this.node, `/${this.username}`, hashedPassword);
 
         // Subscribe to the user's topics
         this.subscribeTopics();
         this.node.pubsub.subscribe(`/${this.username}-wasFollowed`);
         this.node.pubsub.subscribe(`/${this.username}-wasUnfollowed`);
-        this.node.pubsub.subscribe(`/${this.username}-followed`);
-        this.node.pubsub.subscribe(`/${this.username}-unfollowed`);
 
         await provideInfo(this.username);
 
         // Collect all following users info, provide it and subscribe to their topics
         const following = Array.from(this.profile.getFollowing());
         following.forEach(async(user) => {
-            const followUserInfo = await collectInfo(user);
-            if (followUserInfo == null) return;
+            const {error: collectErr, data: followUserInfo} = await collectInfo(user);
+            if (collectErr) return;
 
-            await saveUserData(this.username, user, followUserInfo);
+            await saveUserData(user, followUserInfo);
             await provideInfo(user);
 
             this.node.pubsub.subscribe(`/${user}`);
@@ -217,7 +217,7 @@ class Node {
             this.node.pubsub.subscribe(`/${user}-unfollowed`);
         });
 
-        await saveUserData(this.username, this.username, this.profile.toJson());
+        await saveUserData(this.username, this.profile.toDict());
     }
 
     /**
@@ -234,12 +234,15 @@ class Node {
      * @param {*} followUsername Username of the user to follow
      */
     async follow(followUsername) {
-        const followUserInfo = await collectInfo(followUsername);
-        if (followUserInfo == null) return false;
+        const {error: collectErr, data: followUserInfo} = await collectInfo(followUsername);
+        if (collectErr) return false;
 
-        // TODO?: having this here, we store the information 2 times: here and in publish on line 251
         this.profile.addFollowing(followUsername);
-        await saveUserData(this.username, followUsername, followUserInfo);
+        await saveUserData(this.username, this.profile.toDict());
+
+        // store the followed user info
+        followUserInfo.followers.push(this.username);
+        await saveUserData(followUsername, followUserInfo);
 
         await provideInfo(followUsername);
 
@@ -255,7 +258,7 @@ class Node {
         return true;
     }
 
-    /**
+    /**infoReq
      * Unsubscribe from a user.
      * @param {*} unfollowUsername
      */
@@ -269,12 +272,13 @@ class Node {
         unprovideInfo(this.node, unfollowUsername);
 
         this.profile.removeFollowing(unfollowUsername);
+        await saveUserData(this.username, this.profile.toDict());
 
         await publishMessage(this.node, `/${unfollowUsername}-wasUnfollowed`, this.username);
         await publishMessage(this.node, `/${this.username}-unfollowed`, unfollowUsername);
 
         // remove the user from the local storage
-        deleteUserData(this.username, unfollowUsername);
+        deleteUserData(unfollowUsername);
     }
 
     /**
@@ -290,7 +294,7 @@ class Node {
         };
 
         this.profile.addPost(post);
-        await saveUserData(this.username, this.username, this.profile.toJson());
+        await saveUserData(this.username, this.profile.toDict());
 
         await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
@@ -301,8 +305,10 @@ class Node {
      * Reset this node's information.
      */
     resetInfo() {
+        // Store profile info of a node when it is logged in
+        this.profile = null;
+        this.loggedIn = false;
         this.username = "";
-        this.profile = {};
     }
 
     getNode() {
@@ -310,21 +316,26 @@ class Node {
     }
 
     isLoggedIn() {
-        return this.username !== "";
+        return this.loggedIn;
     }
 
     /**
-     * @param {string} username 
-     * @returns json with the user's information.
+     * Function that returns a user's info. If the user is the currently logged in user, gets the info from the profile.
+     * Otherwise, fetches it from persistent memory
+     * @param {string} targetUsername 
+     * @returns {Dict} {error: error, data: data} data -> Dictionary with user's info
      */
-    async getInfo(username) {
-        const { data, error } = await getUserData(this.username, username);
-        if (error) {
-            console.log(`Error reading user data so we can't retrieve the information: ${error}`);
-            return {};
-        }
+    async getInfo(targetUsername) {
+        // If the user is the currently logged in user
+        if (targetUsername === this.username && this.isLoggedIn())
+            return buildStatusRes(null, this.profile.toDict());
 
-        return data;
+        const result = await getUserData(targetUsername);
+        if (result.error) {
+            console.log(`Error reading user data so we can't retrieve the information: ${result.error}`);
+        } 
+
+        return result;
     }
 }
 

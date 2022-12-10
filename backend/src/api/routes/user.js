@@ -46,15 +46,18 @@ async function unfollowHandler(req, res) {
  */
 async function infoHandler(req, res) {
     const username = req.params.username;
-    let info = username === node.username || node.profile.hasFollowing(username) ?
-        await node.getInfo(username) :
-        await collectInfo(username);
+    const {error, data} = await collectInfo(username);
 
-    if (info == null) info = {};
+    const info = error ? {} : data;
 
     res.json(info);
 }
 
+/**
+ * 
+ * @param {*} req 
+ * @param {*} res 
+ */
 async function timelineHandler(req, res) {
     const timeline = await mergePostsIntoTimeline();
     res.json(timeline);
