@@ -111,3 +111,15 @@ export const getTimelineRequest = async (username) => {
 
     return {res, body};
 };
+
+export const getRecommendedRequest = async (username) => {
+    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/recommended`, {
+        method: "GET",
+        headers: {
+            "Content-Type": "application/json"
+        }
+    });
+    const body = await res.json();
+
+    return {res, body};
+}

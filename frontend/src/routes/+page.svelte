@@ -14,6 +14,6 @@
         <FeedColumn />
     </div>
     <div class="col-span-1 w-full">
-        <RecommendedColumn recommendedFollowers={data.followers} />
+        <RecommendedColumn recommendedFollowers={data.recommended} />
     </div>
 </div>
