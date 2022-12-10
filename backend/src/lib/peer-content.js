@@ -115,13 +115,18 @@ export const collectInfo = async (key) => {
         console.log(`Found ${providers.length} providers for ${key}: ${providers.map(provider => provider.id)}`);
 
         // TODO: Check how info will be updated from the providers
+        const infos = [];
         for (const provider of providers) {
             try {
                 const infoReq = await node.fetch(provider.id, `/${key}`);
-                return JSON.parse(new TextDecoder().decode(infoReq));
+                infos.push(JSON.parse(new TextDecoder().decode(infoReq)).data);
             } catch (err) {
-                // console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
+                console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
             }
+        }
+
+        if (infos.length > 0) {
+            return { error: null, data: mergeInfos(infos) };
         }
     }
 
@@ -168,8 +173,6 @@ const createCID = async(content) => {
 export const mergePostsIntoTimeline = async () => {
     const timeline = await getAllPosts();
     timeline.sort((a, b) => b.timestamp - a.timestamp);
-
-    console.log("Timeline: ", timeline);
     return timeline;
 };
 
@@ -196,4 +199,45 @@ export const findRecommendedUsers = async () => {
     recommendedUsers = [...new Set(recommendedUsers)];
     recommendedUsers = recommendedUsers.filter(user => !following.has(user));
     return recommendedUsers;
+};
+
+/**
+ * Merge the info of the given infos by voting on every single field.
+ * @param {*} infos 
+ * @returns Info dictionary with the merged info of the given infos. 
+ */
+const mergeInfos = (infos) => {
+    const posts = {};
+    /**
+     * @type {Dict} Dictionary with the votes for each field.
+     * @property {Dict} followers Dictionary with the votes for each follower.
+     * @property {Dict} following Dictionary with the votes for each following.
+     * @property {Dict} posts Dictionary with the votes for each post timestamp.
+     */
+    const votation = {
+        followers: {},
+        following: {},
+        posts: {},
+    };
+
+    for (const info of infos) {
+        for (const follower of info.followers) {
+            votation.followers[follower] = (votation.followers[follower] || 0) + 1;
+        }
+        for (const following of info.following) {
+            votation.following[following] = (votation.following[following] || 0) + 1;
+        }
+        for (const post of info.posts) {
+            votation.posts[post.timestamp] = (votation.posts[post.timestamp] || 0) + 1;
+            posts[post.timestamp] = post;
+        }
+    }
+
+    // Use the info that has been voted by more than half of the peers
+    const info = {
+        followers: Object.entries(votation.followers).filter(key => key[1] >= infos.length/2).map(key => key[0]),
+        following: Object.entries(votation.following).filter(key => key[1] >= infos.length/2).map(key => key[0]),
+        posts: Object.entries(votation.posts).filter(key => key[1] >= infos.length/2).map(key => posts[key[0]]),
+    };
+    return info;    
 };
