@@ -2,6 +2,7 @@ import { CID } from "multiformats/cid";
 import { sha256 } from "multiformats/hashes/sha2";
 import all from "it-all";
 import peer from "../models/Node.js";
+import { getAllPosts } from "./storage.js";
 
 /**
  * Get the content from the DHT
@@ -69,8 +70,8 @@ export const provideInfo = async(key) => {
 
     // Node register the retrieve function to be called when a peer request the content
     try {
-        node.fetchService.registerLookupFunction(`/${key}`, () => {
-            const info = peer.getInfo(key);
+        node.fetchService.registerLookupFunction(`/${key}`, async() => {
+            const info = await peer.getInfo(key);
             return new TextEncoder().encode(JSON.stringify(info));
         });
     } catch (err) {
@@ -98,30 +99,34 @@ export const unprovideInfo = async(key) => {
 /**
  * Find the peers that provide the content for the given key.
  * Fetch the content from the first peer that provides it. // TODO: tweek this
+ * If the content is not found, tries to get it locally.
+ * If the content is not found locally, returns error.
  * @param {Libp2p} node 
  * @param {string} key 
- * @returns {object} Dictionary with the content if found, null otherwise.
+ * @returns {Dict} {error: error, data: data} data -> Dictionary with user's info
  */
-export const collectInfo = async(key) => {
+export const collectInfo = async (key) => {
     const node = peer.node;
 
     const providers = await getPeerProviders(key);
-    if (providers.length === 0) {
-        return null;
-    }
-    console.log(`Found ${providers.length} providers for ${key}: ${providers.map(provider => provider.id)}`);
+    let foundProviders = providers.length > 0;
 
-    // TODO: Check how info will be updated from the providers
-    for (const provider of providers) {
-        try {
-            let info = await node.fetch(provider.id, `/${key}`);
-            return JSON.parse(new TextDecoder().decode(info)); 
-        } catch (err) {
-            console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
+    if (foundProviders) {
+        console.log(`Found ${providers.length} providers for ${key}: ${providers.map(provider => provider.id)}`);
+
+        // TODO: Check how info will be updated from the providers
+        for (const provider of providers) {
+            try {
+                const infoReq = await node.fetch(provider.id, `/${key}`);
+                return JSON.parse(new TextDecoder().decode(infoReq));
+            } catch (err) {
+                console.log(`Error fetching info from provider ${provider.id}: ${err}. Trying next...`);
+            }
         }
     }
 
-    return null;
+    // Try to collect info from the local info in this node
+    return peer.getInfo(key);
 };
 
 /**
@@ -160,11 +165,10 @@ const createCID = async(content) => {
  * Collect the posts of peer profiles object and merge them into a single array ordered by timestamp in reverse.
  * @returns {Array} All the posts of the own user and the users he is following ordered by timestamp in reverse.
  */
-export const mergePostsIntoTimeline = () => {
-    const timeline = [];
-    Object.values(peer.profiles).forEach(profile => {
-        timeline.push(...profile.posts);
-    });
-    timeline.sort((a,b) => b.timestamp - a.timestamp);
+export const mergePostsIntoTimeline = async () => {
+    const timeline = await getAllPosts();
+    timeline.sort((a, b) => b.timestamp - a.timestamp);
+
+    console.log("Timeline: ", timeline);
     return timeline;
 };

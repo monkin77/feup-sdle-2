@@ -12,7 +12,7 @@ export const canFollow = async(req, res, next) => {
             status: StatusCodes.CONFLICT,
             error: "You cannot follow yourself",
         });
-    } else if (node.info().hasFollowing(username)) {
+    } else if (node.profile.hasFollowing(username)) {
         return next({
             status: StatusCodes.CONFLICT,
             error: `You're already following ${username}`,
@@ -27,7 +27,7 @@ export const canFollow = async(req, res, next) => {
  */
 export const isFollowing = async(req, res, next) => {
     const username = req.params.username;
-    if (!node.info().hasFollowing(username)) {
+    if (!node.profile.hasFollowing(username)) {
         return next({
             status: StatusCodes.CONFLICT,
             error: `You're not following ${username}`,
