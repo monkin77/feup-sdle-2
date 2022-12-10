@@ -9,8 +9,11 @@ import { kadDHT } from "@libp2p/kad-dht";
 import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
-import { addFollower, addFollowing, addPost, deleteUserData, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
+import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, garbageCollectFile, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
 import { buildStatusRes } from "../lib/utils.js";
+
+
+const INTERVAL_TIME = 1000 * 60 * 60 * 24; // 1 day
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -41,6 +44,7 @@ const getNodeOptions = () => {
 };
 
 class Node {
+
     constructor() {
         /**
          * Array of objects containing information about subscribed topics: conditions and actions.
@@ -68,6 +72,7 @@ class Node {
             async(data, evt) => {
                 const username = evt.detail.topic.substring(1);
                 await addPost(username, JSON.parse(data));
+                await garbageCollectFile(username);
             }
         );
 
@@ -198,6 +203,10 @@ class Node {
         }
 
         this.loggedIn = true;
+        // This should be always null on this point but we do it just in case
+        if (!this.garbageInterval) 
+            this.garbageInterval = setInterval( async () => await garbageCollect(), INTERVAL_TIME);
+
 
         // Re-write the password so the new nodes have them in their DHT
         await putContent(this.node, `/${this.username}`, hashedPassword);
@@ -235,6 +244,10 @@ class Node {
     async logout() {
         this.unsubscribeAll();
         this.resetInfo();
+
+        // clear garbage collect interval
+        clearInterval(this.garbageInterval);
+        this.garbageInterval = null;
     }
 
     /**
@@ -304,6 +317,7 @@ class Node {
         this.profile.addPost(post);
         await saveUserData(this.username, this.profile.toDict());
 
+        await garbageCollectFile(this.username);
         await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
         return post;
