@@ -6,8 +6,8 @@
     export let isFollowing;
 
     async function toggleFollow() {
-        if (isFollowing) await followRequest(follower);
-        else await unfollowRequest(follower);
+        if (isFollowing) await unfollowRequest(follower);
+        else await followRequest(follower);
 
         isFollowing = !isFollowing;
     }
