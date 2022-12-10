@@ -9,11 +9,11 @@ import { kadDHT } from "@libp2p/kad-dht";
 import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage, putContent } from "../lib/peer-content.js";
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
-import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, garbageCollectFile, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
+import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
 import { buildStatusRes } from "../lib/utils.js";
 
 
-const INTERVAL_TIME = 1000 * 60 * 60 * 24; // 1 day
+const GARBAGE_COLLECT_INTERVAL = 1000 * 60 * 60; // 1 hour
 
 const getNodeOptions = () => {
     const bootstrapAddresses = parseBootstrapAddresses();
@@ -72,7 +72,6 @@ class Node {
             async(data, evt) => {
                 const username = evt.detail.topic.substring(1);
                 await addPost(username, JSON.parse(data));
-                await garbageCollectFile(username);
             }
         );
 
@@ -105,20 +104,16 @@ class Node {
                 if (variant === "wasFollowed") {
                     if (username === this.username) this.profile.addFollowers(dataUsername);
                     await addFollower(username, dataUsername);
-                }
-                else if (variant === "followed") {
+                } else if (variant === "followed") {
                     if (username === this.username) this.profile.addFollowing(dataUsername);
                     await addFollowing(username, dataUsername);
-                }
-                else if (variant === "wasUnfollowed") {
+                } else if (variant === "wasUnfollowed") {
                     if (username === this.username) this.profile.removeFollowers(dataUsername);
                     await removeFollower(username, dataUsername);
-                }
-                else if (variant === "unfollowed") {
+                } else if (variant === "unfollowed") {
                     if (username === this.username) this.profile.removeFollowing(dataUsername);
                     await removeFollowing(username, dataUsername);
-                }
-                else
+                } else
                     throw new Error("Topic not implemented");
             }
         );
@@ -193,7 +188,7 @@ class Node {
     async login(username, hashedPassword) {
         this.username = username;
 
-        const {error: collectErr, data: collectedInfo} = await collectInfo(username);
+        const { error: collectErr, data: collectedInfo } = await collectInfo(username);
         if (!collectErr) {
             this.profile = new Info(collectedInfo);
             console.log("Recovered account info: ", this.profile);
@@ -204,8 +199,8 @@ class Node {
 
         this.loggedIn = true;
         // This should be always null on this point but we do it just in case
-        if (!this.garbageInterval) 
-            this.garbageInterval = setInterval( async () => await garbageCollect(), INTERVAL_TIME);
+        if (!this.garbageInterval)
+            this.garbageInterval = setInterval(async() => await garbageCollect(), GARBAGE_COLLECT_INTERVAL);
 
 
         // Re-write the password so the new nodes have them in their DHT
@@ -221,7 +216,7 @@ class Node {
         // Collect all following users info, provide it and subscribe to their topics
         const following = Array.from(this.profile.getFollowing());
         following.forEach(async(user) => {
-            const {error: collectErr, data: followUserInfo} = await collectInfo(user);
+            const { error: collectErr, data: followUserInfo } = await collectInfo(user);
             if (collectErr) return;
 
             await saveUserData(user, followUserInfo);
@@ -255,7 +250,7 @@ class Node {
      * @param {*} followUsername Username of the user to follow
      */
     async follow(followUsername) {
-        const {error: collectErr, data: followUserInfo} = await collectInfo(followUsername);
+        const { error: collectErr, data: followUserInfo } = await collectInfo(followUsername);
         if (collectErr) return false;
 
         this.profile.addFollowing(followUsername);
@@ -303,7 +298,7 @@ class Node {
     }
 
     /**
-     * Function to post a message.
+     * Function to add a new post
      * @param {*} text Post content message
      * @returns New created post.
      */
@@ -317,7 +312,6 @@ class Node {
         this.profile.addPost(post);
         await saveUserData(this.username, this.profile.toDict());
 
-        await garbageCollectFile(this.username);
         await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
         return post;
@@ -355,7 +349,7 @@ class Node {
         const result = await getUserData(targetUsername);
         if (result.error) {
             console.log(`Error reading user data so we can't retrieve the information: ${result.error}`);
-        } 
+        }
 
         return result;
     }
