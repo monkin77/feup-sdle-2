@@ -196,7 +196,7 @@ class Node {
         this.loggedIn = true;
         // This should be always null on this point but we do it just in case
         if (!this.garbageInterval) 
-            this.garbageInterval = setInterval(garbageCollect, INTERVAL_TIME);
+            this.garbageInterval = setInterval( async () => await garbageCollect(false), INTERVAL_TIME);
 
 
         // Re-write the password so the new nodes have them in their DHT
@@ -308,6 +308,7 @@ class Node {
         this.profile.addPost(post);
         await saveUserData(this.username, this.profile.toDict());
 
+        await garbageCollect(true);
         await publishMessage(this.node, `/${this.username}`, JSON.stringify(post));
 
         return post;

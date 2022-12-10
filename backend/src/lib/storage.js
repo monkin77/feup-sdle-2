@@ -194,8 +194,10 @@ export const getAllPosts = async () => {
 /**
  * Function that deletes posts that are older than 1 day (ONE_DAY_TIMESTAMP)
  * or the last posts if the user has more than 100 (NUMBER_OF_POSTS_TO_KEEP) posts
+ * @param {boolean} collectSize if true, we will delete the last posts if the user has more than 100 posts, 
+ * otherwise we will delete posts older than 1 day
  */
-export const garbageCollect = async () => {
+export const garbageCollect = async (collectSize) => {
     const loggedUsername = peer.username;
     const path = `${STORAGE_PATH}/${loggedUsername}`;
     const files = await fs.promises.readdir(path);
@@ -212,21 +214,26 @@ export const garbageCollect = async () => {
 
         const currTime = Date.now();
         const newPosts = [...data.posts];
+        newPosts.sort((a, b) => a.timestamp - b.timestamp);
 
-        // remove posts that are older than 1 day
-        for (let j = 0; j < newPosts.length; j++) {
-            const post = newPosts[j];
-            const postTime = post.timestamp;
-            if (currTime - postTime > ONE_DAY_TIMESTAMP) {
-                newPosts.splice(j, 1);
-                j--;
+        if (collectSize) {
+            // remove last posts if more than 100
+            if (newPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
+                newPosts.splice(0, newPosts.length - NUMBER_OF_POSTS_TO_KEEP);
             }
+        } else {
+            // remove posts that are older than 1 day
+            for (let j = 0; j < newPosts.length; j++) {
+                const post = newPosts[j];
+                const postTime = post.timestamp;
+                if (currTime - postTime > ONE_DAY_TIMESTAMP) {
+                    newPosts.splice(j, 1);
+                    j--;
+                }
+            }
+
         }
 
-        // remove last posts if more than 100
-        if (newPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
-            newPosts.splice(0, newPosts.length - NUMBER_OF_POSTS_TO_KEEP);
-        }
 
         if (newPosts.length !== data.posts.length) {
             data.posts = newPosts;
