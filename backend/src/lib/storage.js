@@ -244,7 +244,8 @@ export const garbageCollectFile = async (fileUsername) => {
         return;
     } else {
         const newPosts = [...data.posts];
-        console.log("POSTS::S:S::S:S: ", newPosts);
+        newPosts.sort((a, b) => a.timestamp - b.timestamp);
+
         if (newPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
             newPosts.splice(0, newPosts.length - NUMBER_OF_POSTS_TO_KEEP);
         }
