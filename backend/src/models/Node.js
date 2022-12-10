@@ -40,12 +40,18 @@ const getNodeOptions = () => {
 };
 
 class Node {
-    /**
-     * Array of objects containing information about subscribed topics: conditions and actions.
-     * A condition is a function that will be compared with the received event's topic.
-     * An action is the function to be called when the condition is met.
-     */
-    subscribedTopics = [];
+    constructor() {
+        /**
+         * Array of objects containing information about subscribed topics: conditions and actions.
+         * A condition is a function that will be compared with the received event's topic.
+         * An action is the function to be called when the condition is met.
+         */
+        this.subscribedTopics = [];
+
+        // Store profile info of a node when it is logged in
+        this.profile = null;
+    }
+
 
     subscriptionHandler = () => async(evt) => {
         singletonNode.subscribedTopics
