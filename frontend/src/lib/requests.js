@@ -1,125 +1,40 @@
 import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
-export const loginRequest = async (username, password) => {
-    const res = await fetch(PUBLIC_BACKEND_URL + "/auth/login", {
-        method: "POST",
+const generalRequest = async (method, endpoint, body) => {
+    const res = await fetch(PUBLIC_BACKEND_URL + endpoint, {
+        method,
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify({username, password})
+        body: JSON.stringify(body)
     });
-    const body = await res.json();
+    const json = await res.json();
 
-    return {res, body};
+    const validationErrors = {};
+    if (json.errors) {
+        json.errors.forEach(error => {
+            if (!validationErrors[error.param]) // Prioritize first error
+                validationErrors[error.param] = error.msg;
+        });
+    }
+
+    if (!res.ok) {
+        return {res, body: json, error: json.error, validationErrors};
+    }
+
+    return {res, body: json};
 };
 
-export const registerRequest = async (username, password) => {
-    console.log("registerRequest", username, password);
-    const res = await fetch(PUBLIC_BACKEND_URL + "/auth/register", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({username, password})
-    });
-    const body = await res.json();
+export const loginRequest = async (username, password) => generalRequest("POST", "/auth/login", {username, password});
+export const registerRequest = async (username, password) => generalRequest("POST", "/auth/register", {username, password});
+export const logoutRequest = async () => generalRequest("POST", "/auth/logout");
+export const checkAuthRequest = async () => generalRequest("GET", "/auth/me");
 
-    return {res, body};
-};
+export const followRequest = async (username) => generalRequest("POST", `/users/${username}/follow`);
+export const unfollowRequest = async (username) => generalRequest("POST", `/users/${username}/unfollow`);
 
-export const logoutRequest = async () => {
-    const res = await fetch(PUBLIC_BACKEND_URL + "/auth/logout", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-    const body = await res.json();
+export const postRequest = async (text) => generalRequest("POST", "/posts/new", {text});
 
-    return {res, body};
-};
-
-export const checkAuthRequest = async () => {
-    const res = await fetch(PUBLIC_BACKEND_URL + "/auth/me", {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-    const body = await res.json();
-
-    return {res, body};
-};
-
-export const followRequest = async (username) => {
-    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/follow`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-    const body = await res.json();
-
-    return {res, body};
-};
-
-export const unfollowRequest = async (username) => {
-    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/unfollow`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-    const body = await res.json();
-
-    return {res, body};
-};
-
-export const postRequest = async (text) => {
-    const res = await fetch(`${PUBLIC_BACKEND_URL}/posts/new`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({text})
-    });
-    const body = await res.json();
-
-    return {res, body};
-};
-
-export const getInfoRequest = async (username) => {
-    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/info`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-    const body = await res.json();
-
-    return {res, body};
-};
-
-export const getTimelineRequest = async (username) => {
-    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/timeline`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-    const body = await res.json();
-
-    return {res, body};
-};
-
-export const getRecommendedRequest = async (username) => {
-    const res = await fetch(`${PUBLIC_BACKEND_URL}/users/${username}/recommended`, {
-        method: "GET",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    });
-    const body = await res.json();
-
-    return {res, body};
-}
+export const getInfoRequest = async (username) => generalRequest("GET", `/users/${username}/info`);
+export const getTimelineRequest = async (username) => generalRequest("GET", `/users/${username}/timeline`);
+export const getRecommendedRequest = async (username) => generalRequest("GET", `/users/${username}/recommended`);
