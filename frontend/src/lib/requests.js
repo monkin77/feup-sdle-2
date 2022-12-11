@@ -50,3 +50,14 @@ export const postRequest = async (text) => generalRequest("POST", "/posts/new", 
 export const getInfoRequest = async (username) => generalRequest("GET", `/users/${username}/info`);
 export const getTimelineRequest = async (username) => generalRequest("GET", `/users/${username}/timeline`);
 export const getRecommendedRequest = async (username) => generalRequest("GET", `/users/${username}/recommended`);
+
+export const timelineSSE = (action) => {
+    const eventSource = new EventSource(PUBLIC_BACKEND_URL + "/posts/sse");
+    console.log("SSE connected");
+    eventSource.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log("SSE data:", data)
+        if (action) action(data);
+    };
+    return eventSource;
+}
