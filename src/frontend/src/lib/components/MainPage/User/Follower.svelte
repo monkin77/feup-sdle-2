@@ -20,7 +20,9 @@
 
 <div class="flex items-center justify-between my-4 p-5 bg-slate-900 rounded-3xl">
     <div class="flex items-center gap-2">
-        <img src={avatar} class="w-10 h-10 rounded-full" alt={`${follower} avatar`} />
+        <a href="/profile/{follower}">
+            <img src={avatar} class="w-10 h-10 rounded-full" alt={`${follower} avatar`} />
+        </a>
         <p class="text-lg font-medium ml-1">{follower}</p>
     </div>
 

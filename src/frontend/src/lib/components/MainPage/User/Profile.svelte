@@ -16,7 +16,9 @@
 
 <div class="flex justify-between items-center">
     <div class="flex justify-start items-center">
-        <img src={avatar} class="rounded-full w-16 h-16" alt="your avatar" />
+        <a href="/profile/{username}">
+            <img src={avatar} class="rounded-full w-16 h-16" alt="your avatar" />
+        </a>
         <p class="text-xl font-medium px-3">{username}</p>
     </div>
     <button class="hover:bg-slate-700 rounded-md h-9 w-9" on:click={logout}>
