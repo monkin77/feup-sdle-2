@@ -1,11 +1,13 @@
 <script>
 	import { followRequest, unfollowRequest } from "../../../requests";
+	import { following } from "../../../stores";
     import avatar from "./avatar.svg";
 
     export let follower;
-    export let isFollowing;
 
-    async function toggleFollow() {
+    $: isFollowing = $following.includes(follower);
+
+    async function followAction() {
         let res;
         if (isFollowing) ({res} = await unfollowRequest(follower));
         else ({res} = await followRequest(follower));
@@ -23,11 +25,11 @@
     </div>
 
     {#if isFollowing}
-        <button class="bg-slate-900 hover:bg-indigo-900 border border-indigo-600 text-indigo-500 text-sm font-bold py-1 px-2 rounded-xl" on:click={toggleFollow}>
+        <button class="bg-slate-900 hover:bg-indigo-900 border border-indigo-600 text-indigo-500 text-sm font-bold py-1 px-2 rounded-xl" on:click={followAction}>
             Unfollow
         </button>
     {:else}
-        <button class="bg-indigo-600 hover:bg-indigo-900 text-sm font-bold py-1 px-2 rounded-xl" on:click={toggleFollow}>
+        <button class="bg-indigo-600 hover:bg-indigo-900 text-sm font-bold py-1 px-2 rounded-xl" on:click={followAction}>
             Follow
         </button>
     {/if}

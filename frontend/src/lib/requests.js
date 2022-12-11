@@ -2,33 +2,39 @@ import { PUBLIC_BACKEND_URL } from '$env/static/public';
 import { snackbarError } from './stores';
 
 const generalRequest = async (method, endpoint, body) => {
-    const res = await fetch(PUBLIC_BACKEND_URL + endpoint, {
-        method,
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(body)
-    });
-    const json = await res.json();
-
-    const validationErrors = {};
-    if (json.errors) {
-        json.errors.forEach(error => {
-            if (!validationErrors[error.param]) // Prioritize first error
-                validationErrors[error.param] = error.msg;
+    try {
+        const res = await fetch(PUBLIC_BACKEND_URL + endpoint, {
+            method,
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
         });
-    }
 
-    if (!res.ok) {
-        if (json.error) {
-            snackbarError.set(json.error);
-        } else if (Object.keys(validationErrors).length === 0) {
-            snackbarError.set("Unknown error");
+        const json = await res.json();
+
+        const validationErrors = {};
+        if (json.errors) {
+            json.errors.forEach(error => {
+                if (!validationErrors[error.param]) // Prioritize first error
+                    validationErrors[error.param] = error.msg;
+            });
         }
-        return {res, body: json, validationErrors};
-    }
 
-    return {res, body: json};
+        if (!res.ok) {
+            if (json.error) {
+                snackbarError.set(json.error);
+            } else if (Object.keys(validationErrors).length === 0) {
+                snackbarError.set("Unknown error");
+            }
+            return {res, body: json, validationErrors};
+        }
+
+        return {res, body: json};
+    } catch (e) {
+        snackbarError.set("Network error");
+        return {res: {ok: false}, body: {}, validationErrors: {}};
+    }
 };
 
 export const loginRequest = async (username, password) => generalRequest("POST", "/auth/login", {username, password});

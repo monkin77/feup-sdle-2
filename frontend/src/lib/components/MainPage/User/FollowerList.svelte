@@ -2,7 +2,6 @@
 	import Follower from "./Follower.svelte";
 
     export let followers;
-    export let isFollowing;
     export let title;
     export let emptyMessage;
 </script>
@@ -17,6 +16,6 @@
 
 <div class="overflow-y-auto h-full px-3">
     {#each followers as follower (follower)}
-        <Follower {follower} {isFollowing} />
+        <Follower {follower} />
     {/each}
 </div>

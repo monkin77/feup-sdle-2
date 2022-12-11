@@ -9,16 +9,10 @@
     export let username;
     export let followers;
 
-    $: userList = $following;
     let followingSelected = true;
 
     function toggleFollowing() {
         followingSelected = !followingSelected;
-        if (followingSelected) {
-            userList = $following;
-        } else {
-            userList = followers;
-        }
     }
 </script>
 
@@ -33,8 +27,7 @@
             <Button buttonText={followingSelected ? "See Followers" : "See Following"} action={toggleFollowing} />
         </div>
         <FollowerList
-            followers={userList}
-            isFollowing={true}
+            followers={followingSelected ? $following : followers}
             title={followingSelected ? "Following" : "Followers"}
             emptyMessage={followingSelected ? "You are not following anyone yet! Check our Recommended Users section :)" : "You have no followers yet! Invite your friends to join us!"}
         />
