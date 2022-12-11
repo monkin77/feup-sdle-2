@@ -8,5 +8,5 @@
 
 <ColumnLayout>
     <FollowUser />
-    <FollowerList followers={recommendedFollowers} isFollowing={false} />
+    <FollowerList followers={recommendedFollowers} isFollowing={false} title="Recommended Users" emptyMessage="There is nobody hanging out in here :( Have you considered inviting your friends?" />
 </ColumnLayout>
