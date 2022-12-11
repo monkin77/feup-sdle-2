@@ -8,26 +8,30 @@
     export let secondaryAction;
 
     const data = {};
+    let errors = {}, snackbarError;
 
     const register = async () => {
-        const {res, body} = await registerRequest(data.username, data.password);
-        console.log(body);
+        let {res, validationErrors, error} = await registerRequest(data.username, data.password);
         if (!res.ok) {
+            errors = validationErrors;
+            snackbarError = error;
             return;
         }
 
-        const {res: res2, body: body2} = await loginRequest(data.username, data.password);
-        if (res2.ok) {
+        ({res, validationErrors, error} = await loginRequest(data.username, data.password));
+        if (res.ok) {
             goto("/");
+        } else {
+            errors = validationErrors;
+            snackbarError = error;
         }
-        console.log(body2);
     }
 </script>
 
 <AuthModal>
     <h2 class="text-2xl text-gray-900 font-bold mb-4">Register</h2>
     <Form buttonText="Register" action={register} secondaryText="Sign in" {secondaryAction}>
-        <FormField id="username" label="Username" type="text" placeholder="Username" bind:value={data.username} />
-        <FormField id="password" label="Password" type="password" placeholder="***********" bind:value={data.password} />
+        <FormField id="username" label="Username" type="text" placeholder="Username" bind:value={data.username} error={errors.username} />
+        <FormField id="password" label="Password" type="password" placeholder="***********" bind:value={data.password} error={errors.password} />
     </Form>
 </AuthModal>
