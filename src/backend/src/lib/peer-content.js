@@ -243,5 +243,6 @@ const mergeInfos = (infos) => {
         following: Object.entries(votes.following).filter(entry => entry[1] > infos.length / 2).map(entry => entry[0]),
         posts: Object.entries(votes.posts).filter(entry => entry[1] > infos.length / 2).map(entry => posts[entry[0]]),
     };
+    info.posts.sort((a, b) => b.timestamp - a.timestamp);
     return info;
 };

@@ -248,7 +248,7 @@ export const garbageCollect = async() => {
  * @param {*} newPost 
  */
 export const addPostAndGarbageCollect = async(prevPosts, newPost) => {
-    prevPosts.push(newPost);
+    prevPosts.unshift(newPost);
 
     if (prevPosts.length > NUMBER_OF_POSTS_TO_KEEP) {
         // Find oldest post and remove it
