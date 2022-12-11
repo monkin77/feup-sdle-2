@@ -21,11 +21,11 @@ export default (app) => {
  */
 async function followHandler(req, res) {
     const username = req.params.username;
-    const status = await node.follow(username);
+    const {status, error} = await node.follow(username);
 
-    if (!status) {
-        return res.status(500).json({
-            error: "Could not follow user",
+    if (error) {
+        return res.status(status).json({
+            error: "Could not follow user " + username + ".",
         });
     }
 
