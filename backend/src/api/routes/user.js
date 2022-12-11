@@ -3,6 +3,7 @@ import { Router } from "express";
 import { isLoggedIn } from "../middleware/authentication.js";
 import { canFollow, existingUser, isFollowing, isUser } from "../middleware/user.js";
 import { collectInfo, findRecommendedUsers, mergePostsIntoTimeline } from "../../lib/peer-content.js";
+import { StatusCodes } from "http-status-codes";
 
 const router = Router();
 
@@ -24,9 +25,15 @@ async function followHandler(req, res) {
     const {status, error} = await node.follow(username);
 
     if (error) {
-        return res.status(status).json({
-            error: "Could not follow user " + username + ".",
-        });
+        if (status == 404) {
+            return res.status(StatusCodes.NOT_FOUND).json({
+                error: "User not found",
+            });
+        } else {
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                error: "Could not follow the user",
+            });
+        }
     }
 
     res.json({});
