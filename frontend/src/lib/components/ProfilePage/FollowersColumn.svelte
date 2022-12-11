@@ -3,6 +3,7 @@
     import UserCard from "./UserCard.svelte";
 
     export let profileFollowers;
+    export let selfUsername;
 </script>
 
 <h3 class="text-3xl font-extrabold tracking-wide pl-3">
@@ -15,10 +16,6 @@
 
 <div class="overflow-y-auto h-full px-3">
     {#each profileFollowers as user }
-        {#if $following.includes(user)}
-            <UserCard {user} isFollowing={true} />
-        {:else}
-            <UserCard {user} isFollowing={false} />
-        {/if}
+        <UserCard {user} isFollowing={$following.includes(user)} isSelfUser={selfUsername === user} />
     {/each}
 </div>

@@ -34,6 +34,7 @@ export async function load({ params }) {
 
     following.set(userInfo.following);
     return {
+        selfUsername: bodyAuth.username,
         username: params.username,
         followers: userInfoProfile.followers,
         following: userInfoProfile.following,

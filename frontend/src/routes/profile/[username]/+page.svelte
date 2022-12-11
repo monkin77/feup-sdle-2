@@ -8,7 +8,7 @@
 
 <div class="grid grid-cols-4 gap-10 justify-items-center h-full">
     <div class="col-span-1 w-full">
-        <FollowingColumn profileFollowing={data.following} />
+        <FollowingColumn profileFollowing={data.following} selfUsername={data.selfUsername} />
     </div>
     <div class="col-span-2 w-full">
         <h1 class="text-3xl font-extrabold text-center tracking-wide pb-5">
@@ -24,6 +24,6 @@
         </div>
     </div>
     <div class="col-span-1 w-full">
-        <FollowersColumn profileFollowers={data.followers} />
+        <FollowersColumn profileFollowers={data.followers} selfUsername={data.selfUsername} />
     </div>
 </div>
