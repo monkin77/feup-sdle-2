@@ -10,7 +10,7 @@ import { discoveryTopic, collectInfo, provideInfo, unprovideInfo, publishMessage
 import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
 import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
-import { buildStatusRes } from "../lib/utils.js";
+import { buildStatusRes, parseError } from "../lib/utils.js";
 import { mdns } from "@libp2p/mdns";
 
 
@@ -252,10 +252,11 @@ class Node {
     /**
      * Follows a user, subscribe to a user topic and set the callback function to be called when a new message is received.
      * @param {*} followUsername Username of the user to follow
+     * @returns {status, error} json object with the status (200, 404, 500) of the operation and the error if any
      */
     async follow(followUsername) {
         const { error: collectErr, data: followUserInfo } = await collectInfo(followUsername);
-        if (collectErr) return false;
+        if (collectErr) return parseError(collectErr);
 
         this.profile.addFollowing(followUsername);
         await saveUserData(this.username, this.profile.toDict());
@@ -275,7 +276,7 @@ class Node {
         await publishMessage(this.node, `/${followUsername}-wasFollowed`, this.username);
         await publishMessage(this.node, `/${this.username}-followed`, followUsername);
 
-        return true;
+        return {status: 200, error: null};
     }
 
     /**infoReq
