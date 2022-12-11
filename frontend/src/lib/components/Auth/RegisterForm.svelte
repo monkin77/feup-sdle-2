@@ -8,22 +8,20 @@
     export let secondaryAction;
 
     const data = {};
-    let errors = {}, snackbarError;
+    let errors = {};
 
     const register = async () => {
-        let {res, validationErrors, error} = await registerRequest(data.username, data.password);
+        let {res, validationErrors} = await registerRequest(data.username, data.password);
         if (!res.ok) {
             errors = validationErrors;
-            snackbarError = error;
             return;
         }
 
-        ({res, validationErrors, error} = await loginRequest(data.username, data.password));
+        ({res, validationErrors} = await loginRequest(data.username, data.password));
         if (res.ok) {
             goto("/");
         } else {
             errors = validationErrors;
-            snackbarError = error;
         }
     }
 </script>

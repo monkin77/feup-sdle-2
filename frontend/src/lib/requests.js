@@ -1,4 +1,5 @@
 import { PUBLIC_BACKEND_URL } from '$env/static/public';
+import { snackbarError } from './stores';
 
 const generalRequest = async (method, endpoint, body) => {
     const res = await fetch(PUBLIC_BACKEND_URL + endpoint, {
@@ -19,7 +20,12 @@ const generalRequest = async (method, endpoint, body) => {
     }
 
     if (!res.ok) {
-        return {res, body: json, error: json.error, validationErrors};
+        if (json.error) {
+            snackbarError.set(json.error);
+        } else if (Object.keys(validationErrors).length === 0) {
+            snackbarError.set("Unknown error");
+        }
+        return {res, body: json, validationErrors};
     }
 
     return {res, body: json};

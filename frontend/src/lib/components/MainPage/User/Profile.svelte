@@ -11,7 +11,6 @@
         if (res.ok) {
             goto("/login");
         }
-        console.log(body);
     }
 </script>
 

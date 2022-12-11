@@ -8,15 +8,14 @@
     export let secondaryAction;
 
     const data = {};
-    let errors = {}, snackbarError;
+    let errors = {};
 
     const login = async () => {
-        const {res, validationErrors, error} = await loginRequest(data.username, data.password);
+        const {res, validationErrors} = await loginRequest(data.username, data.password);
         if (res.ok) {
             goto("/");
         } else {
             errors = validationErrors;
-            snackbarError = error;
         }
     }
 </script>
