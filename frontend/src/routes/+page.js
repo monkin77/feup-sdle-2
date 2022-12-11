@@ -1,7 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import { checkAuthRequest, getInfoRequest, getTimelineRequest } from "$lib/requests";
 import { timeline, following } from '../lib/stores';
-import { getRecommendedRequest } from '../lib/requests';
+import { getRecommendedRequest, timelineSSE } from '../lib/requests';
+import { browser } from '$app/environment';
 
 const defaultData = {
     username: "You",
@@ -40,6 +41,12 @@ export async function load() {
 
     timeline.set(timelineList);
     following.set(userInfo.following);
+
+    if (browser) {
+        // SSE to update timeline
+        timelineSSE(data => timeline.update(timeline => [data, ...timeline]));
+    }
+
     return {
         username: bodyAuth.username,
         followers: userInfo.followers,

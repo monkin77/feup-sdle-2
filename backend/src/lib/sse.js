@@ -5,6 +5,6 @@
  * @param {string} data data in JSON format 
  */
 export const sendSseResponse = (res, data) => {
-    const formattedData = `data: ${JSON.stringify(data)}\n\n`;
+    const formattedData = `data: ${data}\n\n`;
     res.write(formattedData);
 };
