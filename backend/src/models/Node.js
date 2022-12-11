@@ -11,6 +11,7 @@ import { parseBootstrapAddresses } from "../lib/parser.js";
 import { Info } from "../models/Info.js";
 import { addFollower, addFollowing, addPost, deleteUserData, garbageCollect, getUserData, removeFollower, removeFollowing, saveUserData } from "../lib/storage.js";
 import { buildStatusRes } from "../lib/utils.js";
+import { mdns } from "@libp2p/mdns";
 
 
 const GARBAGE_COLLECT_INTERVAL = 1000 * 60 * 60; // 1 hour
@@ -35,6 +36,9 @@ const getNodeOptions = () => {
                 interval: 1000,
                 topics: [],
             }),
+            mdns({
+                interval: 1000,
+            })
         ],
         dht: kadDHT(),
         connectionManager: {
