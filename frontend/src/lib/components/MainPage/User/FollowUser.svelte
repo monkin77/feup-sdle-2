@@ -7,9 +7,8 @@
     async function follow() {
         if (!username) return;
 
-        // TODO: Confirmation/Error message
-        const {res, body} = await followRequest(username);
-        console.log(body);
+        // TODO: Confirmation message
+        const {res} = await followRequest(username);
 
         if (res.ok) {
             following.update((users) => {

@@ -6,10 +6,13 @@
     export let isFollowing;
 
     async function toggleFollow() {
-        if (isFollowing) await unfollowRequest(follower);
-        else await followRequest(follower);
+        let res;
+        if (isFollowing) ({res} = await unfollowRequest(follower));
+        else ({res} = await followRequest(follower));
 
-        isFollowing = !isFollowing;
+        if (res.ok) {
+            isFollowing = !isFollowing;
+        }
     }
 </script>
 

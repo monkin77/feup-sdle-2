@@ -1,12 +1,19 @@
-import { error, redirect } from '@sveltejs/kit';
+import { redirect } from '@sveltejs/kit';
 import { checkAuthRequest, getInfoRequest, getTimelineRequest } from "$lib/requests";
 import { timeline, following } from '../lib/stores';
 import { getRecommendedRequest } from '../lib/requests';
 
+const defaultData = {
+    username: "You",
+    followers: [],
+    recommended: []
+}
+
 export async function load() {
     const {res: resAuth, body: bodyAuth} = await checkAuthRequest();
     if (!resAuth.ok) {
-        throw error(resAuth.status, bodyAuth.error);
+        console.log("Error while checking auth:", bodyAuth);
+        return defaultData;
     }
 
     if (!bodyAuth.isLoggedIn) {
@@ -16,16 +23,19 @@ export async function load() {
     const {res: resInfo, body: userInfo} = await getInfoRequest(bodyAuth.username);
     if (!resInfo.ok) {
         console.log("Error while getting user info:", userInfo);
+        return defaultData;
     }
 
     const {res: resTimeline, body: timelineList} = await getTimelineRequest(bodyAuth.username);
     if (!resTimeline.ok) {
         console.log("Error while getting timeline:", timelineList);
+        return defaultData;
     }
 
     const {res: resRecommended, body: recommendedUsersList} = await getRecommendedRequest(bodyAuth.username);
     if (!resRecommended.ok) {
         console.log("Error while getting recommended users:", recommendedUsersList);
+        return defaultData;
     }
 
     timeline.set(timelineList);

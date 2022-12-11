@@ -7,7 +7,7 @@
     export let username;
 
     const logout = async () => {
-        const {res, body} = await logoutRequest();
+        const {res} = await logoutRequest();
         if (res.ok) {
             goto("/login");
         }

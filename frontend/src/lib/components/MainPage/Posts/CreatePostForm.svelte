@@ -4,13 +4,16 @@
 	import Button from "../../Form/Button.svelte";
 
     let text;
+    let errors = {};
 
     async function post() {
-        const {res, body} = await postRequest(text);
-        console.log(body);
+        const {res, body, validationErrors} = await postRequest(text);
 
         if (res.ok) {
             timeline.update((posts) => [body, ...posts]);
+            errors = {};
+        } else {
+            errors = validationErrors;
         }
     }
 </script>
@@ -21,6 +24,15 @@
     placeholder="What's on your mind?"
 />
 
+{#if errors.text}
+<div class="flex justify-between">
+    <p class="text-red-500 text-sm italic mt-1 ml-2">{errors.text}</p>
+
+    <Button buttonText="Poop!" action={post} />
+</div>
+{:else}
 <div class="self-end">
     <Button buttonText="Poop!" action={post} />
 </div>
+{/if}
+
