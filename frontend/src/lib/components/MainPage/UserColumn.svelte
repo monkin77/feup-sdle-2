@@ -3,9 +3,9 @@
     import CreatePostForm from "./Posts/CreatePostForm.svelte";
 	import FollowerList from "./User/FollowerList.svelte";
     import Profile from "./User/Profile.svelte";
+    import { following } from "$lib/stores";
 
     export let username;
-    export let following;
 </script>
 
 <ColumnLayout>
@@ -13,5 +13,5 @@
         <Profile {username} />
     </div>
     <CreatePostForm />
-    <FollowerList followers={following} isFollowing={true} />
+    <FollowerList followers={$following} isFollowing={true} />
 </ColumnLayout>

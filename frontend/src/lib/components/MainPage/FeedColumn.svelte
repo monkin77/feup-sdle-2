@@ -12,7 +12,7 @@
     {/if}
 
     <div class="overflow-y-auto px-2">
-        {#each $timeline as post}
+        {#each $timeline as post (`${post.username}-${post.timestamp}`)}
             <Post username={post.username} timestamp={post.timestamp} text={post.text} />
         {/each}
     </div>

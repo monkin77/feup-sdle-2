@@ -1,6 +1,6 @@
 import { error, redirect } from '@sveltejs/kit';
 import { checkAuthRequest, getInfoRequest, getTimelineRequest } from "$lib/requests";
-import { timeline } from '../lib/stores';
+import { timeline, following } from '../lib/stores';
 import { getRecommendedRequest } from '../lib/requests';
 
 export async function load() {
@@ -22,17 +22,17 @@ export async function load() {
     if (!resTimeline.ok) {
         console.log("Error while getting timeline:", timelineList);
     }
-    timeline.set(timelineList);
 
     const {res: resRecommended, body: recommendedUsersList} = await getRecommendedRequest(bodyAuth.username);
     if (!resRecommended.ok) {
         console.log("Error while getting recommended users:", recommendedUsersList);
     }
 
+    timeline.set(timelineList);
+    following.set(userInfo.following);
     return {
         username: bodyAuth.username,
         followers: userInfo.followers,
-        following: userInfo.following,
         recommended: recommendedUsersList
     };
 }

@@ -22,7 +22,7 @@
 {/if}
 
 <div class="overflow-y-auto h-full px-3">
-    {#each followers as follower}
+    {#each followers as follower (follower)}
         <Follower {follower} {isFollowing} />
     {/each}
 </div>

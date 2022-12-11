@@ -8,7 +8,7 @@
 
 <div class="grid grid-cols-4 gap-10 justify-items-center h-full">
     <div class="col-span-1 w-full">
-        <UserColumn username={data.username} following={data.following} />
+        <UserColumn username={data.username} />
     </div>
     <div class="col-span-2 w-full">
         <FeedColumn />
